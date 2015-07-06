@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+    <!-- <h1>Response page, for {{ user.nickname }}!</h1> -->
+    <h3>Replies</h3>
+
+    <h5>Open Questions</h5>
+    {% for question in questions %}
+      <div id="question" style="background-color:lightblue">
+      <ul class="collection with-header">
+          <li class="collection-header"><h5>{{ question.question_text }} </h5></li>
+
+          {% for response in question.responses %}
+              <li class="collection-item"><b>{{ response.user_id }}</b>: {{ response.response_raw }} 
+              <p class="tweet_description">Sent at {{ response.created_at }}</p>
+              </li>
+
+          {% endfor %}
+    {% endfor %}
+
+    <h2>Closed Questions</h2>
+    {% for question in closed_questions %}
+      <div id="question" style="background-color:lightblue">
+        <h3>Q: {{ question.text }} </h3>
+        <pre>Venue: {{ question.venue }}      City: {{ question.city }}      Created at: {{ question.created_at }} (UTC)       Question ID: {{ question.id }} </pre>
+      </div>
+
+    {% endfor %}
+
+
+
+{% endblock %}

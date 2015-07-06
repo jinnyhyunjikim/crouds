@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block content %}
+    <h3>Send Question</h3> 
+<!--
+    <div class="row center">
+    <div class="row">
+        <form class="col s9" action="{{ url_for('answerers') }}" method="POST">
+            <div class="row">
+                <div class="input-field col s6">
+                    <input placeholder="Placeholder" id="first_name" type="text" class="validate">
+                    <label for="first_name">First Name</label>
+                </div>
+                <div class="input-field col s6">
+                    <input id="last_name" type="text" class="validate">
+                    <label for="last_name">Last Name</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col s12">
+                    <input disabled value="I am not editable" id="disabled" type="text" class="validate">
+                    <label for="disabled">Disabled</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col s12">
+                    <input id="password" type="password" class="validate">
+                    <label for="password">Password</label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="input-field col s12">
+                    <input id="email" type="email" class="validate">
+                    <label for="email">Email</label>
+                </div>
+            </div>
+            <button class="btn waves-effect waves-light" type="submit" name="action">Submit<i class="material-icons">send</i>
+            </button>
+        </form>
+    </div>
+-->
+
+    <div>
+    	<form action="{{ url_for('answerers') }}" method="POST">
+			City:<br>
+			<input type="text" name="city">
+			<br>
+			Venue:<br>
+			<input type="text" name="venue">
+			<br>
+			Topic:<br>
+			<input type="text" name="topic">
+			<br>
+			Question:<br>
+			<input type="text" size = "35" name="question">
+			<br>
+			<br>
+			<input type="submit" value="View users currently at the area">
+            <button class="btn waves-effect waves-light" type="submit" name="action">View users currently at the area<i class="material-icons">send</i> 
+            </button>
+  		</form>
+    </div>
+<!-- 
+
+    <div>
+    	<form action="question.html">
+			City:<br>
+			<input type="text" name="city">
+			<br>
+			Venue:<br>
+			<input type="text" name="venue">
+			<br>
+			Question:<br>
+			<input type="text" name="question">
+			<br>
+			<br>
+			<input type="submit" value="View how many Twitter users are at the venue.">
+		</form>
+    </div>
+
+    <div>
+    	<form action="answerers">
+			NASWERSRS:<br>
+			<input type="text" name="city">
+			<br>
+			Venue:<br>
+			<input type="text" name="venue">
+			<br>
+			Question:<br>
+			<input type="text" name="question">
+			<br>
+			<br>
+			<input type="submit" value="View how many Twitter users are at the venue.">
+		</form>
+    </div>
+
+    <div>
+    	<form action="question", method="POST">
+			City:<br>
+			<input type="text" name="city">
+			<br>
+			Venue:<br>
+			<input type="text" name="venue">
+			<br>
+			Question:<br>
+			<input type="text" name="question">
+			<br>
+			<br>
+			<input type="submit" value="View how many Twitter users are at the venue.">
+		</form>
+    </div>
+    <div>
+    	<form action="question.html", method="POST">
+			City:<br>
+			<input type="text" name="city">
+			<br>
+			Venue:<br>
+			<input type="text" name="venue">
+			<br>
+			Question:<br>
+			<input type="text" name="question">
+			<br>
+			<br>
+			<input type="submit" value="View how many Twitter users are at the venue.">
+		</form>
+    </div> -->
+    </div>
+
+{% endblock %}

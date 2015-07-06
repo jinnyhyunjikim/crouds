@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+    <h3>Tweeters in the area</h3>
+    <h5>Venue: {{ venue }}</h5>
+    <h6>{{ count }} found</h6>
+
+
+    <ul class="collection with-header">
+		{% for user in usernames %}
+        <li class="collection-item"><div>{{ user.username }} <a href="#!" class="secondary-content"><i class="material-icons">send</i></a></div></li>
+		{% else %}
+		    <li><em>None found :(</em>
+		{% endfor %}
+    </ul>
+    	
+
+	<br/>
+	<br/>
+	<br/>
+	<form action="send_question" method="POST">
+        <button class="btn waves-effect waves-light" type="submit" name="action">View users currently at the area<i class="material-icons">send</i>
+        </button>
+   	</form>
+
+{% endblock %}
+

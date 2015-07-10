@@ -2,7 +2,7 @@
 
 # Parser is for parsing responses given by twitter users to extract
 #  a. numerical values or 
-#  b. a response to a multiple choice  # not yet supported
+#  b. a response to multiple choice  # not yet supported
 
 import re
 import string

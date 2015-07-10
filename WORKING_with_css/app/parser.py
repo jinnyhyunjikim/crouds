@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 # Parser is for parsing responses given by twitter users to extract
-#  a. a numerical value or 
-#  b. response to a multiple choice  # not yet spupported
+#  a. numerical values or 
+#  b. response to a multiple choice  # not yet supported
 
 import re
 import string

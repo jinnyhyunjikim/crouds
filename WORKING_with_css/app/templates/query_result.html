@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+    <h3>Recent Tweeters</h3>
+ 
+
+    
+    <table>
+        <thead>
+            <tr>
+                <th data-field="id">Name</th>
+                <th data-field="name">Item Name</th>
+                <th data-field="price">Item Price</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>3</td>
+                <!-- <td>{{ user.text }}</td> -->
+                <!-- <td>{{ user.text }}</td> -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% endblock %}
+

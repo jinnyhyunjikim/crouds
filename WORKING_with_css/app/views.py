@@ -1,18 +1,16 @@
 #!/usr/bin/env python
-
+# from datetime import datetime
+from dateutil import tz
+from geopy.distance import vincenty
 from flask import render_template
 from app import app
 from flask import abort, redirect, url_for, flash, Flask, request
-from twython import Twython
-from twython import TwythonStreamer 
-import json, datetime
-import json
-import string
-import psycopg2
-from dateutil import tz
-# from datetime import datetime
+from twython import Twython, TwythonStreamer
+import json, datetime, requests, humanize, string, psycopg2, pytz
 
-# Connecting to Twitter Stream using OAuth 1
+from QueryUsers import *
+
+# For connecting to Twitter Stream using OAuth 1
 APP_KEY = 'GLIC9scXNOCQPMvW2Z3vDR0gP'
 APP_SECRET = 'r4pxcSzlCyaHiTR5QFSpN20nLn24XXV06YL8gtxGUzc4wXhgLA'
 ACCESS_TOKEN = '2875905140-02P20c7dHFDgb9yIE2jEqdlidS9xOGkdVq4nrGB'
@@ -23,6 +21,7 @@ APP_SECRET = 'qFCKEMZbLD7NO4ki2ksbibQ01SV88ECJQLZn3TQmQXiJkvN877'
 ACCESS_TOKEN = '3307752328-R52HmpgczQt5tl8hYohaXZ9j0moNMOfAemNEdd1'
 ACCESS_TOKEN_SECRET = 'eJNVo321y9Ancj08oJOo9Ii4KFHJIJgbyFSgaRuMGHb3x'
 
+recentTweeters = []
 class NEW_QUESTION: 
     # default values 
     city = "Pittsburgh"
@@ -32,17 +31,17 @@ class NEW_QUESTION:
     topic = "park usage"
     q_id = 0 # question_id in tweetdb
     
-# Initialize
 nq = NEW_QUESTION()
 twitter = Twython(APP_KEY, APP_SECRET,
                   ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
 twitter.verify_credentials()
 
-
 def sendTweet(user_to_ask, question_text):
     question_statement = "@" + user_to_ask + " " + question_text # e.g. '@jinny6235 Good afternoon!'
+    print "SEDING TWEET!" + question_statement
     twitter.update_status(status = question_statement) # send tweet
-    #sending duplicate tweet (to same user) returns error from twitter
+    #sending duplicate tweet to same user as last one returns error 
+
     print " TWEET sent: " + user_to_ask + "!"
     print "updated database: QUESTION_TWEET"
 
@@ -94,7 +93,11 @@ def getNextRowID(tablename):
 
     cur.execute(query)
     result = cur.fetchone()
+
+    print 'here '
+    print result
     largest_id = result[0]
+    print largest_id
     if largest_id == None: # table empty
         return 0
     return largest_id + 1
@@ -147,6 +150,18 @@ def getResponsesForQuestion(question_id):
     
     return all_replies
 
+def getDistance(coordinates1, coordinates2):
+# Takes in two tuples of lat/long points and calculates 
+# Returns the distance in miles.
+    distance = vincenty(coordinates1, coordinates2).miles
+    return distance
+
+# def removeDecimalPointInSeconds(timestamp_string):
+# # takes in '2015-07-07 15:08:03.745033'
+# # returns 2015-07-06 15:15:13.391368+00:00
+
+#     seconds_decimal_point = timestamp_string.index(".")
+#     timestamp_string = timestamp_string[:seconds_decimal_point]
 
 # Convert UTC timestamp created by db to local (EST) time
 def convertUTCtoLocalTime(timestamp_string):
@@ -215,10 +230,16 @@ def question():
                            user=user,
                            posts=posts)
 
+def getRelativeTime(timestamp):
+# Takes in a timestamp with timezone and
+# returns humanized form of time difference btwn now and then
+    timestamp = timestamp.replace(tzinfo=None) # strip timezone 
+    now =  datetime.datetime.now()
+    relativeTime = humanize.naturaltime( now - timestamp )
+    return relativeTime
+
 @app.route('/responses')
 def responses():
-    print "routed to here"
-    print 'hereeeee'
     user = {'nickname': 'Miguel'}
     responses = [
         {
@@ -235,45 +256,38 @@ def responses():
         # Returns a list of questions, each in dict format
         conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
         cur = conn.cursor()
-        print "Getting questions"
+        print "Getting questions" + open_or_closed
         if open_or_closed == "open": # get questions that have not yet expired
             statement = """SELECT question_id, question_text, venue, city, created_at FROM question WHERE expires_at > now() ORDER BY created_at DESC ; """
         else:
             statement = """SELECT question_id, question_text, venue, city, created_at FROM question WHERE expires_at < now() ORDER BY created_at DESC ; """
+        print statement
         cur.execute(statement)
         questions = cur.fetchall()
         conn.commit()
         cur.close()
         conn.close()
-        
         # Build dictionary for each question
         list_of_questions = [] # will insert each dictionary here
         columns = ('question_id', 'question_text', 'venue', 'city', 'created_at') ###
         for question in questions:
             list_of_questions.append(dict(zip (columns, question)))
-        
-        print "here"
         # Adjust to EST time (psql tweet stores UTC time)
         for question in list_of_questions:
-            utc_time = question['created_at']
-            utc_time = str(utc_time)
-            est_time = convertUTCtoLocalTime(utc_time)
-            question['created_at'] = est_time
-        
-        print "here2"
+            created_at = question['created_at']
+            # utc_time = str(utc_time)
+            # est_time = convertUTCtoLocalTime(utc_time)
+            # question['created_at'] = est_time
+            question['time_since'] = getRelativeTime(created_at)
+
         # Add replies to those tweets
         for question in list_of_questions:
             question_id = question['question_id']
-            print question_id
             replies = getResponsesForQuestion(question_id)
-            print "got replies for one question"
             question['responses'] = replies # a list of dict of replies
         
-        print 'returring :' 
         for question in list_of_questions:
-        	print "ONE QUESTION:"
         	print question['question_text']
-        	print "------"
 
         return list_of_questions
 
@@ -356,6 +370,33 @@ def responses():
                            questions=open_questions,
                            closed_questions=closed_questions)
 
+@app.route('/recent_tweeters')
+def recent_tweeters():
+    print 'here, in recent_tweets html page'
+    users = { 'username' : 'jinnyhyunjikim' }
+    # recent_tweeters = recentTweeters
+    # print recent_tweeters
+    # if request.method == 'POST':
+    #     venue_name = str(request.form['venue_name'])
+    #     print 'HERE!!!! VENUE NAME'
+    #     print venue_name
+    #     recent_tweeters = find_the_tweeters(venue_name)
+    #     render_template('recent-tweeters.html', users=users)
+    # else:
+    #     print 'here'
+    #     return render_template('recent-tweeters.html')
+    users = nq.usernames
+    print 'USERS TO DISPLAY:'
+    print users
+    # return render_template('query_result.html', users=users)
+    return render_template(url_for('query_result'), users=users)
+
+def find_the_tweeters(venue_name= None):
+    print 'finding the tweeters...'
+    print 'venue name: ' + venue_name
+    recentTweeters = QueryTwitterUsers.query(last_tweet_venue_name = venue_name)
+    return recentTweeters
+
 @app.route('/show_answerers')
 def show_answerers():
     # Get X number of people who tweeted at the area / venue within the past X minutes
@@ -382,7 +423,110 @@ def show_answerers():
         conn.close()
         return result
 
-    nq.usernames = getUsersToAsk()
+    def getUsersToAsk_method2(city = 'tweet_pgh', venue = 'Schenley Plaza',
+                                                how_many = 5, type = 'park', nearby ="near"):
+    # takes in a venue name and type, e.g. "Schenley Park", "park" or 
+    # "Forbes+Craig","cross-section"
+
+    # nearby = "near" - within .5 mi or "at" - within the bounding box 
+    # returns a list of how_many users who tweeted NEAR that venue within
+    # last X minutes
+        # Get the coordinates of the venue
+        return ['jinnyhyunjikim']
+        def getVenueID(venue_name):
+
+        	return
+        def getCoordinatesOfVenue(venue_name):
+
+	        CLIENT_ID ='0015X0KQ1MLXKW0RTDOCOKUMACBCKE30ZY2IFYPCQDYTZ3EC'
+	        CLIENT_SECRET = 'UKJRW30YZAXC5DUO5KOZFPM4XWD3O3YSK0ANCZKB3TYCMCA5'
+
+	        url = 'https://api.foursquare.com/v2/venues/search?match=true&limit=1'
+	        city = 'near=%s' % ( 'pittsburgh,pa' )
+	        venue_name = 'query=%s' % ( venue ) 	        # print venue_name
+	        client_id = 'client_id=' + CLIENT_ID
+	        client_secret = 'client_secret='+ CLIENT_SECRET
+	        url_complete = url + '&' + city + '&' + venue_name + '&' + client_id + '&' + client_secret+'&v=20150707'
+	        # client_secret = '&client_secret='+ CLIENT_SECRET&v=YYYYMMDD
+	        # oauth_token = '%oauth_token=' + 'SIVKZ0OBXJOO5DO3IJUZ2YDHGEBO4RCY3O3DVJTUE0IN1STQ&v=20150707' 
+
+	        print url_complete
+	        # url = 'https://api.foursquare.com/v2/venues/search?near=New+Delhi&intent=browse&radius=10000&limit=10&query=pizza+hut' + client_id + '&' + client_secret + '&v=20150707'
+	        
+	        response = requests.get(url_complete)
+	        response = response.json()
+
+	        print 'queried!'
+
+	        # check the query is valid
+	        valid = response['meta']['code']
+	        if valid == 200:
+	            first_venue = response['response']['venues'][0]
+	            first_venue_id = first_venue['id']
+	            first_venue_location = first_venue['location']
+	            keys = first_venue_location.keys()
+	            print 'keys'
+	            print keys
+	            print 'VNUE ID :  '
+	            print first_venue_id
+	            print 'VNUE LOCATIONN:  '
+	            latitude = first_venue_location['lat']
+	            print 'here'
+	            print latitude
+	            longitude = first_venue_location['lng']
+	            # print type(latitude)
+	            print 'after long'
+	            print longitude
+	            print 'after long'
+	            return (latitude, longitude)
+	        else: 
+	            print 'No location found. Please check the venue name'
+	            return -1
+
+        # Get users whose location within X minutes was within Y miles 
+        # of the venue's coordinates
+        coordinates_venue = getCoordinatesOfVenue(venue)
+        if coordinates_venue == -1:
+        	return
+        else:
+        	users_near = getNearUsers(coordinates_venue)
+
+        def getUsersNearby(coordinate_points):
+        # Takes in a tuple of latitude and longitude points and 
+        # Returns a list of users from question_user db who has tweeted 
+        # within X mi of the given points in the last 5 minutes
+
+        	# Get users who tweeted within the last 5 minutes
+            search_limit = 5
+            query = """SELECT user_id FROM question_user
+                        WHERE last_tweet_timestamp >= (now() - interval '5 minutes') 
+                        limit %d;""" % ( search_limit )
+            conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
+            cur = conn.cursor()
+            cur.execute(query)
+            recent_tweeters = cur.fetchall()  # -> get list of userids
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+
+        	# Filter users who were within X mi of the given points
+            users_nearby = []
+            proximity = 0.05 # miles
+            # for recent_tweeter in recent_tweeters:
+                # get last coordinates of the tweeter 
+                # coordinates_tweeter = getMostRecentLocation
+
+                # calculate distance
+                # distance = getDistance(coordinates_venue, coordinates_tweeter)
+                # if distance < proximity:
+                    # users_nearby.append(recent_tweeter)
+            return users_nearby
+
+
+    # nq.usernames = getUsersToAsk()
+    nq.usernames = getUsersToAsk_method2()
+    print 'got users!'
     usernames_to_display = []
     one_username = dict()
     print 'here'
@@ -393,13 +537,10 @@ def show_answerers():
     print usernames_to_display
     for username in usernames_to_display:
         print username['username']
-    print "done"
-    print 'here'
+
     print type(usernames_to_display)
     count = len(usernames_to_display)
-    print count
-    print nq.venue
-
+    print 'VENUE! ' + nq.venue
     return render_template('show_answerers.html', venue=nq.venue, count=count, 
                 usernames=usernames_to_display) 
 
@@ -417,7 +558,18 @@ def answerers():
 #    return render_template(url_for('show_answerers.html')) # does not work
 #    return redirect(url_for('show_answerers'))
 
-# Send questions to individual usernames
+@app.route('/get_recent_tweeters', methods=['POST'])
+def get_recent_tweeters():
+    print request.form['city']
+    print request.form['venue-name']
+    venue_name = str(request.form['venue-name'])
+
+    print 'HERE!!!! VENUE NAME'
+    print venue_name
+    nq.usernames = find_the_tweeters(venue_name)
+    return redirect(url_for('recent_tweeters'))
+
+# Send questions to individual user
 @app.route('/send_question', methods=['POST'])
 def send_question():
     q_id = nq.q_id
@@ -427,12 +579,12 @@ def send_question():
     topic = nq.topic
     tor = type_of_response = "numeric" # only numberic supported now with response db
     
-    expire_after = 30 # question expires after 30 minutes
+    expire_after = 30 # minutes
     datetime_now = datetime.datetime.now()
     datetime_expire = datetime_now + datetime.timedelta(minutes=expire_after)
     datetime_now = str(datetime_now) # e.g. '2015-07-04 17:23:42.636711'
     datetime_expire = str(datetime_expire)
-    datetime_expire = '2015-07-04 17:23:42.636711'
+    datetime_expire = '2015-07-10 17:23:42.636711' # extended for testing
 
     print "updating database: QUESTION ... "
     # Insert this asking instance to question db
@@ -446,7 +598,7 @@ def send_question():
     usernames = nq.usernames
     for username in usernames:
     	x= 2
-        # sendTweet(username, question)
+        sendTweet(username, question)
     return redirect(url_for('question_sent')) ### return to question sent! ?
 
 

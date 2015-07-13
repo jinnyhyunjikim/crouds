@@ -4,6 +4,9 @@ from twython import TwythonStreamer
 import json
 import string
 import psycopg2
+# from geopy.distance import vincenty
+from parser import Parser
+
 
 # Initialize Twython for Twitter user streaming, using OAuth1
 
@@ -89,8 +92,6 @@ def parseResponse(response_text):
 	words_in_numbers = convertWordsToNumbers(array_of_words)
 	words_in_numbers = combineTwoNumbersNextToEachOther(words_in_numbers)
 	non_negative_numbers = deleteNegativeNumbers(words_in_numbers)
-	print "NON NEG NUMBERS" 
-	print non_negative_numbers
 	count = extracted_numbers_count = len(non_negative_numbers)
 	if (count  == 0 or count > 2): return None # return 'Error parsing text'
 	if (count == 1): return non_negative_numbers[0]
@@ -200,7 +201,8 @@ def getQuestionID(tweet_text):
 	# statement = "SELECT question_id FROM question WHERE question_text LIKE '%s' ;"  %(question_text) 
 	cur.execute(statement)
 	conn.commit()
-	top_question = cur.fetchall()[0]
+	top_question = cur.fetchall()[0] 	#######
+
 	top_question_id = top_question[0]
 	# there may be many questions asked at different times. 
 	# fetch the latest one. 
@@ -268,13 +270,39 @@ def byteify(input):
 	else:
 		return input
 
+def ignoreDoubleQuotes(str):
+# inserts ' before a " to make psql command ignore the "
+	new_str = ""
+	for i in xrange(len(str)):
+		if str[i] == '"':
+			add = "\\" + str[i]
+			new_str += add
+		else:
+			new_str += str[i]
+	return new_str
+
+def testIgnoreDoubleQuotes():
+	print "Testing ignoreDoubleQuotes..."
+	response = ignoreDoubleQuotes('she says "hi"')
+	# print 'response' + response 
+	# print 'with repr' + repr(response)
+
+	# print "compare to"
+	# print 'she says \\"hi\\"'
+	# print repr('she says \\"hi\\"')
+	# for i in xrange(len(response)):
+	# 	if response[i] != 'she says \"hi\"'[i]:
+	# 		print i
+	# 		print response[i]
+	# 		print 'she says \"hi\"'[i]
+
+	assert(ignoreDoubleQuotes('she says "hi"') == 'she says \\"hi\\"')
+	print "Test passed!"
 
 class UserStreamer(TwythonStreamer):
 	def on_success(self, data):
 	# Receiving twitter stream from an account (followers' tweets)
 		# print json.dumps(data, indent=4, sort_keys=True) # to pretty-print
-		print "here"
-		print data
 
 		if 'user' in data: # Check that it's a tweet data, not user data
 			user = data['user']['id']
@@ -289,17 +317,25 @@ class UserStreamer(TwythonStreamer):
 			_MY_SCREEN_NAME_ = 'jinny6235' # 'jinnyhyunjikim'
 
 			# It's a tweet replying to me.
-			if data['in_reply_to_user_id'] == _MY_USER_ID_:
+			# if data['in_reply_to_user_id'] == _MY_USER_ID_:
+
+			if data != None:
 				# print "it's a tweet repying to me !"
-				print "hereeeee id"
 				tweet_id = data['id'] #prob stringify
 				# tweet_id = int( data['id'] ) #prob stringify
 				tweet_replying_to = data['in_reply_to_status_id']
 				if tweet_replying_to == None: 
 					tweet_replying_to = -1 # indicates the original question_tweet was deleted
 				reply = data['text'] 
+				print ' === ONE TWEET ==== '
+				print 'TWEET MSG: '
+				print type(reply)
+				print reply
+				reply = ignoreDoubleQuotes(reply)
 				reply = reply_without_my_id = removeUserMentions(reply)
-				parsed = parseResponse(reply)
+				# parser = Parser()
+				parsed = Parser.parse(reply)
+				# parsed = parseResponse(reply)
 				print "PARSED: "
 				print parsed
 				user_screen_name = data['user']['screen_name']
@@ -310,6 +346,7 @@ class UserStreamer(TwythonStreamer):
 				updateDatabase("question_response", tweet_id, reply, parsed,
 									 tweet_replying_to, user_screen_name, created_at)
 				print "db updated! reply"
+				print ' === ONE TWEET END==== '
 
 			# It's a tweet I'm sending out
 			elif data['user']['screen_name'] == _MY_SCREEN_NAME_:
@@ -392,7 +429,7 @@ def updateDatabase(tablename, *data):
 	print "--Updating database-- "
 	# row_id = getNextRowID(tablename)
 	TABLE_NAME = tablename
-	print 'VALUES -->> ' + str(data) 
+	# print 'VALUES -->> ' + str(data) 
 	data = list(data) # convert tuple to list
 	# data.insert(0, row_id) # add row id
 	data = tuple(data) 
@@ -551,7 +588,7 @@ crouds = CROUDS()
 print "running"
 crouds.stream_twitter_feed()
 
-
+# testIgnoreDoubleQuotes()
 
 
 
@@ -601,7 +638,6 @@ def test_parseResponse():
 	assert (parseResponse("around 16 to 20 cars") == 18)
 	assert (parseResponse("about twenty cars") == 20)
 	assert (parseResponse("about thirty three cars") == 33)
-
 	assert (parseResponse("maybe seventeen") == 17)
 	assert (parseResponse("about twenty to 30 cars") == 25)
 	assert (parseResponse("almost ten") == 10)
@@ -623,6 +659,14 @@ def test_removeUserMentions():
 	assert (removeUserMentions(" ") == " ")
 	print "Passed!"
 
+def test_getDistance():
+	print "Testing getDistance..."
+	assert (getDistance((41.49008, -71.312796),(41.499498, -81.695391)) == 538.3904451566326)
+	# assert (getDistance("@20_5 30-40.") == "30-40.")
+	# assert (getDistance("around 23?") == "around 23?")
+	# assert (getDistance("") == "")
+	# assert (getDistance(" ") == " ")
+	print "Passed!"
 def __test__():
 	print "#### Testing ######"
 	test_removePunctuationInAWord()

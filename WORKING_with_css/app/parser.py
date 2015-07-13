@@ -7,7 +7,7 @@
 import re
 import string
 
-class Parser():
+class Parser(): # tweet_responseparser more specific name
 
     # Takes in a string and extracts ONE POSITIVE INT if exists.
     # If no positive number is present or more than two are present, 
@@ -23,15 +23,16 @@ class Parser():
     #   4) Return extracted number (or average)
 
     @staticmethod
-    def extract_one_positive_int(str):
+    def get_one_integer(str): # too specific 
         words_separated = separate_each_word(str)
-        converted_to_numbers = convert_to_numbers(words_separated) 
+        converted_to_numbers = convert_to_numbers(words_separated)
+
         numbers = combine_two_numbers_next_to_each_other(converted_to_numbers)
         numbers = remove_negative_numbers(numbers)
         count = len(numbers) # number of extracted
                              # 0 or positive numbers.
         
-        if (count  == 0 or count > 2): return None # return 'Error parsing text'
+        if (count  == 0 or count > 2): return -1 # None or too many found
         if (count == 1): return numbers[0]
         if (count == 2): 
             return (numbers[0] + numbers[1]) / 2
@@ -155,7 +156,7 @@ assert spoken_word_to_number_method_1('one thousand nine hundred one') == 1901
     return(output)
 
 #############################################
-# extract_one_positive_int level helper fn's
+# get_one_integer level helper fn's
 #############################################
 
 def separate_each_word(string):
@@ -170,6 +171,7 @@ def convert_to_numbers(array_of_words_and_numbers):
 print "Testing convert_word_to_number..."
 assert( convert_word_to_numbers(['maybe', 'two', 'to', '5']) == [-1, 2, -1, 5]) 
 assert( convert_word_to_numbers([]) == []) 
+assert( convert_word_to_numbers(['']) == [-1]) 
 assert( convert_word_to_numbers(['none']) == [0]) 
 assert( convert_word_to_numbers(['thirty', 'two', 'I','think']) == [30, 2, -1, -1]) 
 assert( convert_word_to_numbers(['I', 'don't', 'know']) == [-1, -1, -1])
@@ -191,6 +193,7 @@ def convert_word_to_number(word_or_number):
     # If not a number (int or spelled out), return -1 
     """
 print "Testing convert_word_to_number..."
+assert( convert_word_to_number("") == -1) 
 assert( convert_word_to_number("any") == 0) 
 assert( convert_word_to_number("none") == 0) 
 assert( convert_word_to_number("this") == -1)
@@ -200,6 +203,7 @@ assert( convert_word_to_number("1200") == 1200)
 assert( convert_word_to_number("13") == 13)
 print "Test passed !"
 """ 
+    if len(word_or_number) == 0: return -1
     if word_or_number.lower() == "none": return 0
     if word_or_number.lower() == "any": return 0
 
@@ -297,24 +301,24 @@ print 'Test passed!'
     return new_array
 
 def test_parse():
-    print 'Testing Parser.extract_one_positive_int...'
-    assert (Parser.extract_one_positive_int("idk") == None)
-    assert (Parser.extract_one_positive_int("") == None)
-    assert (Parser.extract_one_positive_int("I see none.") == 0) # "none" and "any" read as 0
-    assert (Parser.extract_one_positive_int("23 minutes") == 23)
-    assert (Parser.extract_one_positive_int("around 23 minutes") == 23)
-    assert (Parser.extract_one_positive_int("around 16 to 20 cars") == 18)
-    assert (Parser.extract_one_positive_int("about twenty cars") == 20)
-    assert (Parser.extract_one_positive_int("about thirty three cars") == 33)
-    assert (Parser.extract_one_positive_int("about thirty-three cars") == 33)
-    assert (Parser.extract_one_positive_int("maybe seventeen") == 17)
-    assert (Parser.extract_one_positive_int("about twenty to 30 cars") == 25)
-    assert (Parser.extract_one_positive_int("almost ten") == 10)
-    assert (Parser.extract_one_positive_int("  2") == 2)
-    assert (Parser.extract_one_positive_int("about thirty-three cars") == 33) # not yet supported
-    # assert (Parser.extract_one_positive_int("about thirtythree cars") == 33) # error. misspelled
-    # assert (Parser.extract_one_positive_int("around 15 to 20 cars") == 18) # error. float avg 
-    # assert (Parser.extract_one_positive_int("around23 minutes") == 23) # error. spacing 
+    print 'Testing Parser.get_one_integer...'
+    assert (Parser.get_one_integer("idk") == -1)
+    assert (Parser.get_one_integer("") == -1)
+    assert (Parser.get_one_integer("I see none.") == 0) # "none" and "any" read as 0
+    assert (Parser.get_one_integer("23 minutes") == 23)
+    assert (Parser.get_one_integer("around 23 minutes") == 23)
+    assert (Parser.get_one_integer("around 16 to 20 cars") == 18)
+    assert (Parser.get_one_integer("about twenty cars") == 20)
+    assert (Parser.get_one_integer("about thirty three cars") == 33)
+    assert (Parser.get_one_integer("about thirty-three cars") == 33)
+    assert (Parser.get_one_integer("maybe seventeen") == 17)
+    assert (Parser.get_one_integer("about twenty to 30 cars") == 25)
+    assert (Parser.get_one_integer("almost ten") == 10)
+    assert (Parser.get_one_integer("  2") == 2)
+    assert (Parser.get_one_integer("about thirty-three cars") == 33) # not yet supported
+    # assert (Parser.get_one_integer("about thirtythree cars") == 33) # error. misspelled
+    # assert (Parser.get_one_integer("around 15 to 20 cars") == 18) # error. float avg 
+    # assert (Parser.get_one_integer("around23 minutes") == 23) # error. spacing 
     print 'Test passed!'
 
 test_parse()

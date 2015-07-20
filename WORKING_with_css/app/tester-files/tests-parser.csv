@@ -1,14 +1,45 @@
-"""idk""",-1
-,-1
-"""I see none.""",0
-"""  2""",2
-"""23 minutes """,23
-"""around 23 minutes.""",23
-"""around 16 to 20 cars""",18
-"""about twenty cars""",20
-"""maybe seventeen""",17
-"""about twenty to 30 cars""",25
-"""almost ten""",10
-"""about thirty-three cars""",33
-"""Around thirty three cars""",33
-"""about thirty-three cars""",33
+,Number,,,,
+number,"""idk""",-1,,,
+number,,-1,,,
+number,"""I see none.""",0,,,
+number,"""  2""",2,,,
+number,"""23 minutes """,23,,,
+number,"""around 23 minutes.""",23,,,
+number,"""around 16 to 20 cars""",18,,,
+number,"""about twenty cars""",20,,,
+number,"""maybe seventeen""",17,,,
+number,"""about twenty to 30 cars""",25,,,
+number,"""almost ten""",10,,,
+number,"""about thirty-three cars""",33,,,
+number,"""Around thirty three cars""",33,,,
+number,"""about thirty-three cars""",33,,,
+number,"""I'd say 20.""",20,,,
+number,"""2 or 3""",2.5,,,
+number,"""1. (including me? 2.)""",2,,,
+number,"""i'm inside. see zero out my window.""",0,,,
+number,"""I'm inside but I went outside and saw 25.""",25,,,
+number,"""none""",0,,,
+number,"""about thirtythree cars""",23,,,
+number,"""around 15 to 20 cars""",17.5,,,
+,,,,,
+,"""can't see from my view""",,,,
+,"""more than I can count""",,,,
+,,,,"""do these really help?""","""I'm not gonna answer these anymore"""
+,"""I seetwo""",,,,"""don't send me these anymore"""
+,"""twentitwo""",,,,
+,"""around23 minutes""",,,,
+,,,,,
+,,,,,
+mc,"""a""",a,,,
+mc,"""a.""",a,,,
+mc,""" b""",b,,,
+mc,"""cc""",c,,,
+mc,"""a. thanks for asking""",a,,,
+mc,"""a. please don't close down the bridge!""",a,,,
+mc,"""I would say c""",c,,,
+mc,"""B.""",b,,,
+mc,""" (C)""",c,,,
+,,,,,
+,,,,,
+mc,"""bc""",-1,,,
+mc,"""between a & b""",-1,,,

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+    <h3>Search Users</h3>
+
+    <div class="input-field col s12">
+
+    <form action="{{ url_for('get_recent_tweeters') }}" method="POST">
+    	<div>
+    	<h4>By home (most tweeted location)</h4>
+        <input type="checkbox" name="check" value="home-neighborhood"><label>Neighborhood:</label>
+        <select class="browser-default" name="home-neighborhood">
+          <option value="Oakland">Oakland</option>
+          <option value="Squirel Hill">Squirel Hill</option>
+          <option value="Shadyside">Shadyside</option>
+        </select>
+      </div>
+
+      <div>
+    	<h4>By most recent  location</h4>
+        <!--  
+        <label>Neighborhood</label>
+        <select class="browser-default" name="venue-name">
+          <option value="Carnegie Mellon Cafe">Oakland</option>
+          <option value="US Steel Tower">Squirell Hill</option>
+          <option value="Point State Park">Shadyside</option>
+        </select>
+        -->
+        <!-- <input type="text" name="city" value="Pittsburgh"> -->
+
+        <input type="radio" name="tweet-location" value="venue-name"><label>Venue Name</label>
+        <select class="browser-default" name="venue-name">
+          <option value="Carnegie Mellon Cafe">Carnegie Mellon Cafe</option>
+          <option value="US Steel Tower">US Steel Tower</option>
+          <option value="Point State Park">Point State Park</option>
+        </select>
+        <!-- <input type="text" name="city" value="Pittsburgh"> -->
+
+        <input type="radio" name="tweet-location"value="venue-id"><label>Venue ID</label>
+        <input type="text" name="venue-id" value="d3edkce5bg94j2">
+
+        <input type="radio" name="tweet-location" value="streets"><label>Streets</label>
+        <input type="text" name="venue-street-1" value="Craig St">
+        <input type="text" name="venue-street-2" value="Forbes Ave">
+
+
+        <br/>
+        <br/>
+        <input type="checkbox" name="check" value="tweet-since"><label>Who was here within the last 
+        <select class="browser-default" name="minutes">
+          <option value="5">5</option>
+          <option value="10">10</option>
+          <option value="20">20</option>
+          <option value="30">30</option>
+          <option value="60">60</option>
+          <option value="1000">1000</option>
+        </select>
+        ... minutes:</label>
+      </div>
+    
+    <br/>
+    <br/>
+    <div class="input-field col s12" class="row center">
+        	<img src="images/image1.png">
+        	<br/>
+          <button class="btn waves-effect waves-light" type="submit" name="action">Search</button>
+    </div>
+
+    </form>
+    </div>
+{% endblock %}
+

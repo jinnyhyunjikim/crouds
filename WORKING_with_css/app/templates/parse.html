@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+    <h3>Recent Tweeters</h3>
+
+    <div class="input-field col s12">
+
+    <textarea rows="4" cols="50">
+  At w3schools.com you will learn how to make a website. We offer free tutorials in all web development technologies. 
+  </textarea>
+
+    <button type="button" onclick=showResult>Try it</button>
+
+    <textarea rows="4" cols="50"><p id="demo"></p> 
+  </textarea>
+    <br/>
+    <br/>
+    <br/>
+
+    <h3>Search Results</h3>
+
+
+{% endblock %}
+<script>
+function processData(form) {
+  var text = form.song.value
+  re
+  showResult(text)
+}
+function showResult(text) {
+  result = text + text
+  document.getElementById("demo").innerHTML = result;
+  
+}
+
+</script>

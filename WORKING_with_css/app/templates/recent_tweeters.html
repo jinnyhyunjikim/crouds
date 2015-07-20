@@ -1,55 +1,67 @@
 {% extends "base.html" %}
 {% block content %}
-    <h3>Recent Tweeters</h3>
- 
+    <h3>Search Users</h3>
+    <!-- <h5>View tweets made within 5 miles of the given venue.</h5> -->
+    <div class="input-field col s12">
     <form action="{{ url_for('get_recent_tweeters') }}" method="POST">
-        <div class="input-field col s12">
-        City:<br>
-        <input type="text" name="city" value="Pittsburgh">
-        <br>
-        <select name="venue-name">
-          <option value="" disabled selected>Choose your option</option>
-          <option value="Carnegie Mellon Cafe">Carnegie Mellon Cafe</option>
-          <option value="US Steel Tower">US Steel Tower</option>
-          <option value="Point State Park">Point State Park</option>
-        </select>
-        <label>Materialize Select</label> 
-
-        <label>Browser Select</label>
+    	<div>
+    	<h4>By home</h4>
+    	<!-- neighborhood / city name e.g. Shadyside, Oakland (bounding box)-->
+        <label><h5>Neighborhood:</h5></label>
         <select class="browser-default" name="venue-name">
-          <option value="" disabled selected>Choose your option</option>
+          <option value="Carnegie Mellon Cafe">Oakland</option>
+          <option value="US Steel Tower">Squirell Hill</option>
+          <option value="Point State Park">Shadyside</option>
+        </select>
+        </div>
+
+        <div>
+
+    	<h3>By last tweet location</h3>
+        <label><h5>City:</h5></label>
+        <br/>
+        <!-- <input type="text" name="city" value="Pittsburgh"> -->
+
+        <br/>
+        <br/>
+        <br/>
+
+        <label><h5>Venue Name</h5></label>
+        <select class="browser-default" name="venue-name">
           <option value="Carnegie Mellon Cafe">Carnegie Mellon Cafe</option>
           <option value="US Steel Tower">US Steel Tower</option>
           <option value="Point State Park">Point State Park</option>
         </select>
+
+        <br/>
+        <br/>
+
+        <label><h5>Venue ID</h5></label>
+        <br/>
+        <input type="text" name="venue-id" value="d3eg94j2">
+
+
+        <label><h5>Who tweeted in the last ... minutes:</h5></label>
+        <select class="browser-default" name="venue-name">
+          <option value="Carnegie Mellon Cafe">5</option>
+          <option value="US Steel Tower">10</option>
+          <option value="Point State Park">20</option>
+          <option value="Point State Park">30</option>
+          <option value="Point State Park">60</option>
+          <option value="Point State Park">600</option>
+          <option value="Point State Park">1000</option>
+        </select>
+
+
+        </div>
+    <div class="input-field col s12">
         <div class="row center">
-            <button class="btn waves-effect waves-light" type="submit" name="action">Search
-            </button>
+        	<img src="images/image1.png">
+        	<br/>
+            <button class="btn waves-effect waves-light" type="submit" name="action">Search</button>
         </div>
-        </div>
+    </div>
     </form>
 
-
-    <!-- 
-    <table>
-        <thead>
-            <tr>
-                <th data-field="id">Name</th>
-                <th data-field="name">Item Name</th>
-                <th data-field="price">Item Price</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td>{{ user.text }}</td>
-                <td>{{ user.text }}</td>
-                <td>{{ user.text }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
- -->
 {% endblock %}
 

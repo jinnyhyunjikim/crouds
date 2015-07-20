@@ -7,14 +7,32 @@
     <title>CROUDS</title>
     {% endif %}
 
-    <link href="{{ url_for('.static', filename='css/style.css') }}" rel="stylesheet">
-    <link href="{{ url_for('.static', filename='css/materialize.min.css') }}" rel="stylesheet">
-    
+    <style>
+    h1,h2,h3,h4,h5,h6,p,a{
+     /* font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;    */ 
+
+   }
+    body, table{
+      background-color: lightgrey;
+      background-color: whitesmoke;
+      font-family: Helvetica, Arial, sans-serif;
+      font-weight: 100;    
+      font-size: .7em;
+      text-decoration: none;
+    }
+    table{
+      margin:auto;
+    }
+    </style>
+    <!-- <link href="{{ url_for('.static', filename='css/style.css') }}" rel="stylesheet"> -->
+    <!-- <link href="{{ url_for('.static', filename='css/materialize.min.css') }}" rel="stylesheet"> -->
+    {% block h %}{% endblock %}
   </head>
   <body>
     <!-- <div>CROUDS: <a href="/index">Home</a></div> -->
     <div class="row center">
-      <p style="margin:2px">Allegheny County Police Department</p>
+      <!-- <p style="margin:2px">Allegheny County Police Department</p> -->
+      <p style="margin:2px">City of Pittsburgh</p>
       <h5 style="margin:1px"><a href="/index" style="color:black">CROUDS</a></h5>
       <!-- <h6>Get real-time information on pedestrian and cyclist traffic or parks utilization by asking crowds on Twitter</h6> -->
       <!-- <li><a href="/question">SEND NEW QUESTION</a> -->

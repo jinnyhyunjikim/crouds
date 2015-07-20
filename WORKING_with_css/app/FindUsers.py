@@ -1,25 +1,94 @@
 #!/usr/bin/python
 
-# FindUsers is for querying for a list of twitter users (volunteers)
-# who have just tweeted 
-# and match one or more on the following criteria:
-#   - home neighborhood
-#   - home coordinate bounding box
-#   - venue category (Foursquare) of last tweet (within a given timeframe)
-#   - venue name / id (Foursquare) of last tweet (within a given timeframe)
-
-import string, psycopg2, requests, json
+import string, psycopg2, requests, json, csv, time
 from datetime import datetime, date
-# from geopy.distance import vincenty
-import csv
+from geopy.distance import vincenty
 
-def get_recent_tweets(minutes=5, max_num_tweets=5):
-# Queries tweets made in the last minutes minutes from tweet_pgh db
-# Return a list of tweets stored as dict
+class FindUsers():
+
+    @staticmethod
+    def search(  
+                within_x_minutes = None,
+                home_neighborhood = None,
+                last_tweet_neighborhood = None,
+                last_tweet_venue_category = None,
+                last_tweet_venue_name = None,
+                last_tweet_venue_id = None,
+                last_tweet_streets = None
+            ):
+
+        # print 'Making a request for users within ' + str(within_x_minutes) + ' minutes...' 
+        print 'Making a request for users within last 30 days...' 
+        query_start_time = time.time()
+
+        searched_for = None
+        dict_to_return = {}
+        dict_to_return['criteria'] = []
+
+        # Get all recent tweeters.
+        all_recent_tweets = get_all_recent_tweets(minutes= within_x_minutes)
+
+        dict_to_return['total_recent_tweet_count'] = len(all_recent_tweets)
+
+        # Filter by last tweet location.
+        matching_tweets = all_recent_tweets
+        if  last_tweet_venue_name != None: 
+            dict_to_return['criteria'].append('venue-name') 
+            matching_tweets = filter_by_venue(tweets= matching_tweets, 
+                                        venue_name= last_tweet_venue_name)
+            print 'filtered after venue - ' + str(len(matching_tweets))
+        elif last_tweet_venue_id != None:
+            dict_to_return['criteria'].append('venue-id') 
+            matching_tweets = filter_by_venue(tweets= matching_tweets, 
+                                        venue_id= last_tweet_venue_id)
+            print 'filtered after venue - ' + str(len(matching_tweets))
+        elif last_tweet_streets != None:
+            dict_to_return['criteria'].append('streets') 
+            matching_tweets = filter_by_streets(tweets= matching_tweets,
+                                              streets= last_tweet_streets)
+            print 'filtered after streets - ' + str(len(matching_tweets))
+        matching_tweets = filter_by_home(tweets= matching_tweets,  
+                                    neighborhood = home_neighborhood)
+        if home_neighborhood != None:
+            dict_to_return['criteria'].append('home-neighborhood') 
+            print 'filtered after home - ' + str(len(matching_tweets))
+
+
+        # Filter non-volunteers. 
+        matching_tweets = remove_non_volunteers(matching_tweets)
+        dict_to_return['search_result'] = matching_tweets 
+        elapsed_time = time.time() - query_start_time
+        dict_to_return['query_duration'] = str(elapsed_time)
+        return dict_to_return
+
+def get_all_recent_tweets(minutes):
+
+    max_search_limit = None
+    if max_search_limit == None: max_search_limit = 300
+
+    # Limit search to first x found CORRECT ONE 
+
     query_statement = """SELECT user_screen_name, text, ST_AsGeoJSON(coordinates)
                         from tweet_pgh 
-                        WHERE created_at >= (now() - interval '10 minutes') 
-                        limit 500 ; """
+                        WHERE created_at >= (now() - interval '%s minutes') 
+                        limit %s; """ % (minutes, max_search_limit)  
+                        # larger time frame 
+    query_statement = """SELECT user_screen_name, text, ST_AsGeoJSON(coordinates)
+                        from tweet_pgh 
+                        WHERE created_at >= (now() - interval '30 days') 
+                        limit %s; """ % (max_search_limit) 
+
+    # Search entire db not just recent ones; very long query
+    if minutes == None:
+        query_statement = """SELECT user_screen_name, text, ST_AsGeoJSON(coordinates)
+                        from tweet_pgh 
+                        limit %s; """ % ( max_search_limit)
+
+    # Search entire tweet_pgh
+    # query_statement = """SELECT user_screen_name, text, ST_AsGeoJSON(coordinates)
+    #                     from tweet_pgh 
+    #                     WHERE created_at >= (now() - interval '%s minutes') ; """ % (minutes)
+
     conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
     cur = conn.cursor()
     cur.execute(query_statement)
@@ -28,31 +97,26 @@ def get_recent_tweets(minutes=5, max_num_tweets=5):
     cur.close()
     conn.close()
 
-    columns = ('user_screen_name', 'text', 'coordinates')
-    recent_tweets = []
+    columns = ('screen_name', 'text', 'coordinates')
+    all_recent_tweets = []
     for tweet in result:
-        recent_tweets.append(dict(zip(columns,tweet)))
-
-    # for tweet in recent_tweets:
-    #     tweet['text'].encode('utf-8')
-    return recent_tweets
-
+        all_recent_tweets.append(dict(zip(columns,tweet)))
+    for tweet in all_recent_tweets:
+        tweet['coordinates'] = get_tweet_coordinates(tweet)
+    return all_recent_tweets
 
 def get_coords_of_venue(city="PGH", venue_id=None, venue_name=None):
-    # must provide either venue_id or venue_name.
-    # if venue_id != venue_name, returns "error: two venue_id does not match venue_name"
-
-    # search venue lat and long using its name on foursquare
+    # if both venue_id and venue_name provided, searches by venue_id
     # returns (lat, long)
     if (city == "PGH"):
         city_state = 'pittsburgh,pa' 
     else:
-        city_state = 'new+york+city,ny' # default
+        city_state = 'new+york+city,ny' 
 
     CLIENT_ID ='0015X0KQ1MLXKW0RTDOCOKUMACBCKE30ZY2IFYPCQDYTZ3EC'
     CLIENT_SECRET = 'UKJRW30YZAXC5DUO5KOZFPM4XWD3O3YSK0ANCZKB3TYCMCA5'
     url = 'https://api.foursquare.com/v2/venues/'
-    city = 'near=%s' % ( city_state)
+    city = 'near=%s' % ( city_state )
 
     client_id = 'client_id=' + CLIENT_ID
     client_secret = 'client_secret='+ CLIENT_SECRET
@@ -67,212 +131,88 @@ def get_coords_of_venue(city="PGH", venue_id=None, venue_name=None):
     if venue_id != None:
         venue = '%s' %( venue_id )
         complete_url = url + venue + '?' + client_id + '&' + client_secret+'&' + date
-        # complete_url = url + venue 
-        # also check it matches venue_name ***
 
-        # print complete_url
+    # https://api.foursquare.com/v2/venues/search?query=pittsburgh+
+    # international+airport&match=true&near=pittsburgh,pa&oauth_token=SIVKZ0OBXJOO5DO3IJUZ2
 
-    # Query by venue name - not suggested. gets first result
+    # Query by venue name- gets the top venue; may be not accurate.
     elif venue_name != None:
-        venue = 'query=%s' % ( venue_name.replace(' ', '+') ) 
-        url += 'search?match=true&limit=1'
-        complete_url = url + '&' + city + '&' + venue_name + '&' + client_id + '&' + client_secret+ '&' + date
-        # print complete_url
-
+        url = 'https://api.foursquare.com/v2/venues/search?query='
+        venue = venue_name.replace(' ', '+') 
+        # url += 'search?match=true&limit=1'
+        # complete_url = url + '&' + city + '&' + venue_name + '&' + client_id + '&' + client_secret+ '&' + date
+        complete_url = url + venue + '&match=true&near=pittsburgh,pa&' + client_id + '&' + client_secret+ '&' + date
+        print complete_url
     else: 
-        print 'No valid venue requested.'
-        return
 
-    # client_secret = '&client_secret='+ CLIENT_SECRET&v=YYYYMMDD
-    # oauth_token = '%oauth_token=' + 'SIVKZ0OBXJOO5DO3IJUZ2YDHGEBO4RCY3O3DVJTUE0IN1STQ&v=20150707' 
+        print 'No venue specified.'
+        return -1
 
-    # print complete_url
-    # url = 'https://api.foursquare.com/v2/venues/search?near=New+Delhi&intent=browse&radius=10000&limit=10&query=pizza+hut' + client_id + '&' + client_secret + '&v=20150707'
-    
     response = requests.get(complete_url)
     response = response.json()
 
-
-    # check the query is valid 
-    # print response
     valid = response['meta']['code']
     if valid == 200:
         response = response['response']
         try: first_venue = response['venue']
         except: first_venue = response['venues'][0]
-        # print first_venue
+        print 'VENUE FOUND:'
+        print first_venue
         first_venue_id = first_venue['id']
         first_venue_location = first_venue['location']
         keys = first_venue_location.keys()
         latitude = first_venue_location['lat']
         longitude = first_venue_location['lng']
-
-        return (latitude, longitude)
+        return [latitude, longitude]
     else: 
-        print 'No location found. Please check the venue name'
+        print 'No valid venue found. Please check the venue again.'
         return -1
 
 def get_tweet_coordinates(tweet):
-    # print 'for tweet id: ' + tweet['id']
     try: 
-        coordinates = tweet['coordinates'] # returns a string like:
-                        # {"type":"Point","coordinates":[-79.933064,40.451525]}
+        coordinates = tweet['coordinates'] # gets a string 
         start_index = coordinates.find('[') + 1
         comma_index = coordinates.find(',', start_index)
         end_index = coordinates.find(']}')
-        latitude = coordinates[start_index:comma_index]
-        longitude = coordinates[comma_index+1:end_index]
-        tweet_coordinates = (latitude, longitude)
+        longitude = float(coordinates[start_index:comma_index])
+        latitude = float(coordinates[comma_index+1:end_index])
+        tweet_coordinates = [latitude, longitude]
         return tweet_coordinates
-
     except: 
         return 'Error: No coordinates found for given tweet'
 
-def filter_venue(tweets, 
-                venue_id=None, 
-                venue_name=None ):
-    max_distance = 5  # miles
-
-    # Gets an array of tweets and removes all that were not at the location / venue 
+def filter_by_venue(tweets, venue_id=None, venue_name=None ):
+# Filters out tweets made more than max_distance away from given venue
+    max_distance = .5  # miles
     city = "PGH"
     tweets_nearby = []
-    # return tweets
-
-
-    # 1. Get coordinates of the venue
-        # a. if venue_id provided, find venue coords by id
-        # b. if name provided, find venue coords by name
-
     venue_coordinates = get_coords_of_venue(city, 
-                                            venue_id= venue_id, 
-                                            venue_name= venue_name)
+                            venue_id= venue_id, venue_name= venue_name)
     for tweet in tweets:
-
-        tweet_coordinates = get_tweet_coordinates(tweet)
-
+        tweet_coordinates = tweet['coordinates']
+        # distance = get_distance_in_feet(tweet_coordinates, venue_coordinates)
         distance = get_distance_in_miles(tweet_coordinates, venue_coordinates)
-        print 'DISTANCE = '
-        print distance
-        if distance < max_distance:
+        if distance <= max_distance:
             tweets_nearby.append(tweet)
-    print "returning tweets_nearby"
     return tweets_nearby
 
-# def tweet_was_made_nearby(coordinate_a, coordinate_b):
-def get_distance_in_miles(coordinate_a, coordinate_b):
-    return vincenty(coordinate_a, coordinate_b).miles
-
-def filter_home(tweets,
-                neighborhood = None,
-                coord_boxes = None):
-    return tweets
-
-class FindUsers():
-    @staticmethod
-    def search(  
-                home_neighborhood = None,
-                home_coord_boxes = None,
-
-                last_tweet_venue_type = None,
-                last_tweet_venue_name = None,
-                last_tweet_venue_id = None,
-
-                last_tweet_streets = None,
-            ):
-        print 'querying' 
-
-        # street / cross section ? 
-
-        # 1. Get only recent tweets. 
-        # 2. If last tweet location criteria selected, compare location
-        # 3. If home criteria selected, compare home
-
-        # Get all recent tweeters.
-        recent_tweets = get_recent_tweets()
-
-        # Filter by location.
-
-        # Option 1: Venue
-        if  (last_tweet_venue_name != None or last_tweet_venue_type != None or 
-            last_tweet_venue_id != None):
-            recent_tweets = filter_venue(   tweets= recent_tweets, 
-                                            venue_id= last_tweet_venue_id,
-                                            venue_name= last_tweet_venue_name)
-
-        # Option 2: Streets
-        elif last_tweet_streets != None:
-            recent_tweets = filter_by_streets(   tweets= recent_tweets,
-                                                streets= last_tweet_streets)
-
-        # Filter by home.
-        if home_neighborhood != None or home_coord_boxes != None:
-            recent_tweets = filter_home(tweets= recent_tweets,  
-                                        neighborhood = home_neighborhood,
-                                        coord_boxes = home_coord_boxes)
-        
-        # Get only volunteers. 
-
-        recent_tweets = remove_non_volunteers(recent_tweets)
-        print 'returning recent tweets!!! from findusers.py'
-        print recent_tweets
-        return recent_tweets
-
-def remove_non_volunteers(tweets):
-# Takes in a list of tweets and returns a modified list of tweetsb
-# made by volunteers
-    return tweets 
-
-    for tweet in tweets:
-        user = get_tweet_user(tweet)
-        if is_a_volunteer(user) == False:
-            tweets.remove(tweet)
-    return tweets
-
-def is_a_volunteer(user_screen_name):
-# Takes in a user_screen_name and return True if 
-# in the list of volunteers' screen names in volunteers.csv
-    return True ## testing
-
-    for volunteer in csv.reader(open("static/volunteers/screen-names.csv")):
-        if volunteer[0] == user_screen_name:
-            return True
-    return False
-
-
-def test():
-    print 'Testing get_coords_of_venue...'
-    print( get_coords_of_venue('PGH', venue_id = '430d0a00f964a5203e271fe3') == (40.70227697066692, -73.9965033531189))
-    print( get_coords_of_venue('PGH', venue_name='carnegie mellon cafe') == (40.440798744786015, -79.99699115753174))
-    # assert( get_coords_of_venue('PGH', venue_name='carnegie mellon cafe'))
-    # print( get_coords_of_venue('PGH', venue_id = '430d0a00f964a5203e271fe3'))
-
-
-    print QueryTwitterUsers.query(last_tweet_venue_name = "carnegie mellon cafe")
-    print QueryTwitterUsers.query(last_tweet_venue_id = "carnegie mellon cafe")
-    print QueryTwitterUsers.query(last_tweet_venue_name = "carnegie mellon cafe")
-
-
-
-    print 'Test passed!'
-
-# print QueryTwitterUsers.query(last_tweet_venue_name = "carnegie mellon cafe")
-
-# test()
-
 def filter_by_streets(tweets, streets):
-    max_distance = 0.01 # miles
+# streets = ('Craig st', 'Forbes ave')
+    max_distance = .5 # miles
     street_coords = get_street_coords(streets)
     tweets_nearby = []
     for tweet in tweets:
-        tweet_coords = get_tweet_coordinates(tweet)
-        if distance(street_coords, tweet_coords) < max_distance:
+        tweet_coords = tweet['coordinates']
+        # distance = get_distance_in_feet(street_coords, tweet_coords)
+        distance = get_distance_in_miles(street_coords, tweet_coords)
+        if distance <= max_distance:
             tweets_nearby.append(tweet)
     return tweets_nearby
 
-def get_street_coords(street_a, street_b):
+def get_street_coords(tuple_of_streets):
 # Takes in a tuple of street cross-section 
 # Returns lat, lng points 
-
+    street_a, street_b = tuple_of_streets[0], tuple_of_streets[1]
     street_a = street_a.replace(' ', '+')
     street_b = street_b.replace(' ', '+')
     address = street_a + '+' + street_b # Forbes+Ave+%26+S+Craig+St
@@ -287,18 +227,101 @@ def get_street_coords(street_a, street_b):
     lat, lng = round(lat, 6), round(lng, 6)
     return (lat, lng)
 
-def test_get_street_coords():
-    assert (get_street_coords("Forbes ave", "craig st") == (40.444535, -79.948752))
-# test_get_street_coords()
+def get_distance_in_miles(coordinate_a, coordinate_b):
+    # also available in km, m, mi, ft, nm, nmi
+    return vincenty(coordinate_a, coordinate_b).miles
+
+def get_distance_in_feet(coordinate_a, coordinate_b):
+    # also available in km, m, mi, ft, nm, nmi
+    return vincenty(coordinate_a, coordinate_b).feet
+
+def filter_by_home(tweets, neighborhood = None):
+    for tweet in tweets:
+        tweet = add_home(tweet)
+
+    if neighborhood == None: 
+        return tweets
+
+    filtered = []
+    for tweet in tweets:
+        if tweet['home'] == neighborhood:
+            filtered.append(tweet)
+    return filtered
+
+def add_home(tweet):
+    # get username
+    # get most common neighborhood
+    # add to home key
+    username = tweet['screen_name']
+    query = "SELECT most_common_neighborhood FROM user_pgh WHERE screen_name = '%s' ;" % (username)
+    conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
+    cur = conn.cursor()
+    cur.execute(query)
+    result = cur.fetchall()
+    conn.commit()
+    cur.close()
+    conn.close()
+    if len(result) == 0: tweet['home'] = 'Not available.'
+    else: tweet['home'] = result[0][0]
+    return tweet
 
 
 
-# Unused:
-# def filter_venue_name(tweets, venue_name):
-#     venue_coordinates = get_coords_of_venue(venue=v_name)
-#     for tweet in tweets:
-#         tweet_coordinates = get_twitter_coordinates(tweet)
-#         if near(venue_coordinates, tweet_coordinates) == True:
-#             filtered_tweets.append(tweet)
-#         else:
-#             pass
+def filter_by_home_faster(tweets, neighborhood = None):
+    if neighborhood == None: return tweets 
+
+    query = "SELECT screen_name FROM user_pgh WHERE most_common_neighborhood = '%s' ;" % (neighborhood)
+    conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
+    cur = conn.cursor()
+    cur.execute(query)
+    result = cur.fetchall()
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    result_flattened  = [item for sublist in result for item in sublist]
+
+    for tweet in tweets:
+        user = tweet['screen_name']
+        if user not in result_flattened: tweets.remove(tweet)
+        tweet['home'] = 'not added'
+
+    return tweets
+
+def remove_non_volunteers(tweets):
+    # return tweets 
+    for tweet in tweets:
+        screen_name = tweet['screen_name']
+        if is_a_volunteer(screen_name) == False:
+            tweets.remove(tweet)
+    return tweets
+
+def is_a_volunteer(user_screen_name):
+    return True ## for testing
+    for volunteer in csv.reader(open("static/volunteers/screen-names.csv")):
+        if volunteer[0] == user_screen_name:
+            return True
+    return False
+
+# print filter_by_home([], 'Shadyside')
+# print get_distance_in_miles((40.444187,-79.943345),(40.444187,-79.943345))
+# print get_distance_in_miles((40.444187,-79.943345),(40.441126,-79.959336))
+# print get_distance_in_miles((40.444187,-79.943345),(40.450887,-79.943024))
+# print get_distance_in_miles((40.444187,-79.943345),(40.441238,-79.99473))
+# print get_distance_in_miles((40.444187,-79.943345),(33.837399,-118.190292))
+
+
+
+# FindUsers.search(last_tweet_venue_name ="Phipps Conservatory")
+# SearchUsers.search(last_tweet_venue_name ="Phipps Conservatory")
+# SearchUsers.search(last_tweet_venue_id ="40a55d80f964a52020f31ee3")
+# SearchUsers.search(last_tweet_streets =("forbes ave", "craig st"))
+
+# print SearchUsers.search(last_tweet_venue_name ="Carnegie Mellon University")
+# print SearchUsers.search(last_tweet_venue_name ="Heinz Hall")
+# print SearchUsers.search(last_tweet_venue_name ="US Steel Tower")
+
+# print SearchUsers.search(last_tweet_streets =("7th st", "liberty ave"))
+
+# print SearchUsers.search(last_tweet_venue_name ="Panera")
+# print SearchUsers.search(last_tweet_venue_name ="Panear Bread")

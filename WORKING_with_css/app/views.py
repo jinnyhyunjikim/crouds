@@ -6,9 +6,10 @@ from flask import render_template
 from app import app
 from flask import abort, redirect, url_for, flash, Flask, request
 from twython import Twython, TwythonStreamer
-import json, datetime, requests, humanize, string, psycopg2, pytz
+import json, datetime, requests, humanize, string, psycopg2, pytz, copy
 
-from QueryUsers import *
+from FindUsers import *
+from foo2 import * 
 
 # For connecting to Twitter Stream using OAuth 1
 APP_KEY = 'GLIC9scXNOCQPMvW2Z3vDR0gP'
@@ -31,10 +32,31 @@ class NEW_QUESTION:
     topic = "park usage"
     q_id = 0 # question_id in tweetdb
     
+
+# twitter.verify_credentials()
+
+class UserSearch:
+
+    def __init__(self):
+        self.minutes = None
+        self.home_neighborhood = None
+        self.last_tweet_venue_name  = None
+        self.last_tweet_venue_id  = None
+        self.last_tweet_streets = None
+        self.search_result = { 'criteria': [], 'total_recent_tweet_count': 0, 'search_result': [],'query_duration': 0}
+
+    def reset(self):
+        self.minutes = None
+        self.home_neighborhood = None
+        self.last_tweet_venue_name  = None
+        self.last_tweet_venue_id  = None
+        self.last_tweet_streets = None
+        self.search_result = { 'criteria': [], 'total_recent_tweet_count': 0, 'search_result': [],'query_duration': 0}
+
 nq = NEW_QUESTION()
 twitter = Twython(APP_KEY, APP_SECRET,
                   ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-twitter.verify_credentials()
+search = UserSearch()
 
 def sendTweet(user_to_ask, question_text):
     question_statement = "@" + user_to_ask + " " + question_text # e.g. '@jinny6235 Good afternoon!'
@@ -94,10 +116,8 @@ def getNextRowID(tablename):
     cur.execute(query)
     result = cur.fetchone()
 
-    print 'here '
-    print result
+
     largest_id = result[0]
-    print largest_id
     if largest_id == None: # table empty
         return 0
     return largest_id + 1
@@ -131,8 +151,6 @@ def getRepliesToATweet(tweet_id):
     conn.commit()
     cur.close()
     conn.close()
-    print "Returning this as replies to a tweet "
-    print results
     return results
 
 def getResponsesForQuestion(question_id):
@@ -205,7 +223,7 @@ def index():
             'body': 'The Avengers movie was so cool!'
         }
     ]
-    print 'rending'
+
     return render_template("index.html",
                            title='Home',
                            user=user,
@@ -370,8 +388,8 @@ def responses():
                            questions=open_questions,
                            closed_questions=closed_questions)
 
-@app.route('/recent_tweeters')
-def recent_tweeters():
+@app.route('/search_users')
+def search_users():
     print 'here, in recent_tweets html page'
     users = { 'username' : 'jinnyhyunjikim' }
     # recent_tweeters = recentTweeters
@@ -385,16 +403,58 @@ def recent_tweeters():
     # else:
     #     print 'here'
     #     return render_template('recent-tweeters.html')
-    users = nq.usernames
-    print 'USERS TO DISPLAY:'
-    print users
-    # return render_template('query_result.html', users=users)
-    return render_template(url_for('query_result'), users=users)
+    return render_template('search_users.html', users=[])
 
+@app.route('/show_recent_tweeters' )
+def show_recent_tweeters():
+    # recent_tweets = nq.usernames
+    # recent_tweets = search.search_result
+
+    # # recent_tweets = []
+    # for tweets in recent_tweets:
+    #     tweets['text'] = tweets['text'].decode('utf-8')
+    # print 'recent_tweets'
+    # print recent_tweets
+    # print 'now rendering page'
+    result = search.search_result
+    # result_str = json.dumps(result)
+    result_str = copy.deepcopy(result)
+
+    for tweets in result['search_result']:
+        tweets['text'] = tweets['text'].decode('utf-8')
+
+
+    print 'after === '
+    print result_str['search_result']
+
+    # str(result['criteria'])
+
+    # print str(result['criteria'])
+    # return render_template('show_recent_tweeters.html', users=result['search_result'], 
+    #     total_tweeters=result['total_recent_tweet_count'],
+    #     return_count=len(result['search_result']), 
+    #     query_duration=result['query_duration'],
+    #     criteria=str(result['criteria']))
+    
+    # criteria = criteria_to_string(result['criteria'])
+    criteria = get_criteria_str(result['criteria'])
+    search.reset()
+    return render_template('show_recent_tweeters.html', 
+        users=result['search_result'], 
+        total_tweeters=result['total_recent_tweet_count'],
+        return_count=len(result['search_result']), 
+        query_duration=result['query_duration'], criteria=criteria,
+        result_str=result_str['search_result'])
+
+def get_criteria_str(list_of_criteria):
+# 
+    return 'You searched for tweeters who tweeted within last x minutes near x who is most likely a resident of'
+# def criteria_to_string(list):/
+    # ['home', 'venue-id'] -> home, neighbor
 def find_the_tweeters(venue_name= None):
     print 'finding the tweeters...'
     print 'venue name: ' + venue_name
-    recentTweeters = QueryTwitterUsers.query(last_tweet_venue_name = venue_name)
+    recentTweeters = FindUsers.search(last_tweet_venue_name = venue_name)
     return recentTweeters
 
 @app.route('/show_answerers')
@@ -450,7 +510,6 @@ def show_answerers():
 	        # client_secret = '&client_secret='+ CLIENT_SECRET&v=YYYYMMDD
 	        # oauth_token = '%oauth_token=' + 'SIVKZ0OBXJOO5DO3IJUZ2YDHGEBO4RCY3O3DVJTUE0IN1STQ&v=20150707' 
 
-	        print url_complete
 	        # url = 'https://api.foursquare.com/v2/venues/search?near=New+Delhi&intent=browse&radius=10000&limit=10&query=pizza+hut' + client_id + '&' + client_secret + '&v=20150707'
 	        
 	        response = requests.get(url_complete)
@@ -465,19 +524,12 @@ def show_answerers():
 	            first_venue_id = first_venue['id']
 	            first_venue_location = first_venue['location']
 	            keys = first_venue_location.keys()
-	            print 'keys'
-	            print keys
-	            print 'VNUE ID :  '
-	            print first_venue_id
-	            print 'VNUE LOCATIONN:  '
+
 	            latitude = first_venue_location['lat']
-	            print 'here'
-	            print latitude
+
 	            longitude = first_venue_location['lng']
 	            # print type(latitude)
-	            print 'after long'
-	            print longitude
-	            print 'after long'
+
 	            return (latitude, longitude)
 	        else: 
 	            print 'No location found. Please check the venue name'
@@ -526,21 +578,13 @@ def show_answerers():
 
     # nq.usernames = getUsersToAsk()
     nq.usernames = getUsersToAsk_method2()
-    print 'got users!'
     usernames_to_display = []
     one_username = dict()
-    print 'here'
     for username in nq.usernames:
             one_username['username'] = username
             usernames_to_display.append(one_username)
-    print "USERNAMES as a list :" 
-    print usernames_to_display
-    for username in usernames_to_display:
-        print username['username']
 
-    print type(usernames_to_display)
     count = len(usernames_to_display)
-    print 'VENUE! ' + nq.venue
     return render_template('show_answerers.html', venue=nq.venue, count=count, 
                 usernames=usernames_to_display) 
 
@@ -558,16 +602,80 @@ def answerers():
 #    return render_template(url_for('show_answerers.html')) # does not work
 #    return redirect(url_for('show_answerers'))
 
-@app.route('/get_recent_tweeters', methods=['POST'])
-def get_recent_tweeters():
-    print request.form['city']
-    print request.form['venue-name']
-    venue_name = str(request.form['venue-name'])
+# @app.route('/get_recent_tweeters', methods=['POST']) ## old 
+# def get_recent_tweeters():
+#     print request.form['city']
+#     print request.form['venue-name']fdure
+#     venue_name = str(request.form['venue-name'])
 
-    print 'HERE!!!! VENUE NAME'
-    print venue_name
-    nq.usernames = find_the_tweeters(venue_name)
-    return redirect(url_for('recent_tweeters'))
+#     print 'HERE!!!! VENUE NAME'
+#     print venue_name
+#     nq.usernames = find_the_tweeters(venue_name)
+#     print 'before redirecting'
+#     print 'nq   ---->'
+#     print nq.usernames
+#     return redirect(url_for('show_recent_tweeters'))
+
+
+@app.route('/get_recent_tweeters', methods=['POST']) ## old 
+def get_recent_tweeters():
+    # print request.form['city']
+    # print request.form['venue-name']
+    # venue_name = str(request.form['venue-name'])
+
+    # print 'HERE!!!! VENUE NAME'
+    # print venue_name
+    # nq.usernames = find_the_tweeters(venue_name)
+    # print 'before redirecting'
+    # print 'nq   ---->'
+    # print nq.usernames
+
+    search.minutes = request.form['minutes']
+    search.home_neighborhood = request.form['home-neighborhood']
+    print search.minutes
+    print search.home_neighborhood 
+    # search.last_tweet_venue_name = request.form['venue-name']
+    # search.last_tweet_venue_id = request.form['venue-id']
+    # search.last_tweet_streets = (request.form['venue-street-1'], request.form['venue-street-2'])
+
+    # check only the ones that were checked
+    checked_criteria = request.form.getlist('check') 
+
+    if 'home-neighborhood' not in checked_criteria: search.home_neighborhood = None
+    if 'tweet-since' not in checked_criteria: search.minutes = 10000
+    print checked_criteria
+    # last tweet location
+    try: # query may or may not include last tweet location as a search criterion
+        if request.form['tweet-location'] == 'venue-name': search.last_tweet_venue_name = request.form['venue-name']
+        if request.form['tweet-location'] == 'venue-id': search.last_tweet_venue_id = request.form['venue-id']
+        if request.form['tweet-location'] == 'streets': search.last_tweet_streets = (request.form['venue-street-1'], request.form['venue-street-2'])
+    except: 
+        pass
+
+    print 'here'
+    print search.minutes
+    print search.home_neighborhood 
+    print search.last_tweet_venue_name 
+    print search.last_tweet_venue_id 
+    print search.last_tweet_streets
+    print 'end'
+
+    search.search_result = FindUsers.search(  
+                within_x_minutes = search.minutes,
+                home_neighborhood = search.home_neighborhood ,
+                last_tweet_neighborhood = search.home_neighborhood ,
+                last_tweet_venue_name = search.last_tweet_venue_name ,
+                last_tweet_venue_id = search.last_tweet_venue_id,
+                last_tweet_streets = search.last_tweet_streets)
+    return redirect(url_for('show_recent_tweeters'))
+# UserSearch.last_tweet_neighborhood = 
+
+
+
+
+
+
+
 
 # Send questions to individual user
 @app.route('/send_question', methods=['POST'])
@@ -600,6 +708,9 @@ def send_question():
     	x= 2
         sendTweet(username, question)
     return redirect(url_for('question_sent')) ### return to question sent! ?
+@app.route('/parse')
+def parse():
+    return render_template('parse.html')
 
 
 @app.route('/question_sent')

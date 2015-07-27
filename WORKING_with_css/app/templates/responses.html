@@ -1,7 +1,40 @@
 {% extends "base.html" %}
 {% block content %}
-    <!-- <h1>Response page, for {{ user.nickname }}!</h1> -->
-    <h3>Replies</h3>
+    <div id="index-banner">
+        <div class="row center">
+        <h2>Responses</h2>
+            <a href="http://materializecss.com/getting-started.html" id="download-button">Parsed</a>
+            &nbsp;
+            &nbsp;
+            &nbsp;
+            <a href="http://materializecss.com/getting-started.html" id="download-button">Unparsed</a>
+        </div>
+    </div>
+{% block content2 %}
+
+
+
+{% endblock %}
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--
+
 
     <h5>Open Questions</h5>
     {% for question in questions %}
@@ -9,14 +42,12 @@
       <ul class="collection with-header">
           <li class="collection-header">
             <h5>{{ question.question_text }} </h5>
-            <!-- <h6>{{ question.question_text }} </h6> -->
             <p>{{ question.time_since }}<p>
             <pre>Venue: {{ question.venue }}      City: {{ question.city }}      Created at: {{ question.created_at }} (UTC)       Question ID: {{ question.id }} </pre>
           </li>
 
           {% for response in question.responses %}
               <li class="collection-item"><b>{{ response.user_id }}</b>: {{ response.response_raw }} 
-              <!-- <p class="tweet_description">Sent at {{ response.time_since }}</p> -->
               <p class="tweet_description">Sent at {{ response.created_at }}</p>
               </li>
 
@@ -35,12 +66,10 @@
 
           {% for response in question.responses %}
               <li class="collection-item"><b>{{ response.user_id }}</b>: {{ response.response_raw }} 
-              <!-- <p class="tweet_description">Sent at {{ response.time_since }}</p> -->
               <p class="tweet_description">Sent at {{ response.created_at }}</p>
               </li>
 
           {% endfor %}
     {% endfor %}
 
-
-{% endblock %}
+-->

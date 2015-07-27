@@ -1,0 +1,531 @@
+    print 'enqueueing'
+    # print new_question.last_tweet_venue_id
+    # print 'before reseting'
+    # new_question.reset()
+    # print 'after reseting'
+    # print new_question.last_tweet_venue_id
+    # try:
+    # print new_question.last_tweet_venue_name 
+    # print new_question.last_tweet_venue_id 
+    # print new_question.last_tweet_streets
+    # new_question.reset()
+
+    # new_question.last_tweet_venue_name  = None
+    # new_question.last_tweet_venue_id = None
+    # new_question.last_tweet_streets= None
+    l
+    print 
+    print '== NEW QUESTION == '
+    print 
+
+    print new_question.start_time
+    print new_question.end_time
+    print new_question.question
+    print new_question.last_tweet_venue_name 
+    print new_question.last_tweet_venue_id 
+    print new_question.last_tweet_streets
+    print new_question.send_times
+    print ' == new question END'
+    print 
+
+    print location
+    print type(send_times)
+    # start_time, end_time = str(start_time), str(end_time)
+
+    # updateDatabase("question", q_id, subject, location, question, start_time, end_time, send_times)
+
+
+    return render_template("responses.html",
+                           title='Responses page',
+                           user=user,
+                           questions=open_questions,
+                           closed_questions=closed_questions)
+
+
+    @app.route('/search_users')
+def search_users():
+    print 'here, in recent_tweets html page'
+    users = { 'username' : 'jinnyhyunjikim' }
+    return render_template('search_users.html', users=[])
+
+# def removeDecimalPointInSeconds(timestamp_string):
+# # takes in '2015-07-07 15:08:03.745033'
+# # returns 2015-07-06 15:15:13.391368+00:00
+
+#     seconds_decimal_point = timestamp_string.index(".")
+#     timestamp_string = timestamp_string[:seconds_decimal_point]
+
+# Convert UTC timestamp created by db to local (EST) time
+
+
+
+
+def getNextRowID(tablename):
+    # Connect to response table in the database
+    conn = psycopg2.connect("dbname=tweet user=jinnyhyunjikim")
+    cur = conn.cursor()
+
+    # Query the response_id of the last element
+    if tablename == 'question':
+        print "querying for question"
+        query = "SELECT max(question_id) FROM question;"
+    elif tablename == 'question_user':
+        query = "SELECT max(user_id) FROM question_user;"
+    else:
+        print "Error: No such table in psql tweet database."
+        return
+
+    cur.execute(query)
+    result = cur.fetchone()
+
+
+    largest_id = result[0]
+    if largest_id == None: # table empty
+        return 0
+    return largest_id + 1
+
+
+
+        print 'here'
+    print search.minutes
+    print search.home_neighborhood 
+    print search.last_tweet_venue_name 
+    print search.last_tweet_venue_id 
+    print search.last_tweet_streets
+    print 'end'
+
+
+        
+    <table>
+        <thead>
+            <tr>
+                <th data-field="id">Screen name</th>
+                <!-- <th data-field="name">Last tweet</th> -->
+                <th data-field="price">Coordinates</th>
+                <th data-field="price">Home</th>
+                <!-- <th data-field="price">Tweeted at</th> -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for tweeter in users %}
+            <tr>
+                <td><b>{{ tweeter.screen_name }}</b></td>
+                <td><b>{{ tweeter.coordinates }}</b></td>
+                <!-- <td>{{ tweeter.text }}</td> -->
+                <td>{{ tweeter.home }}</td>
+            </tr>
+            {% endfor %} 
+        </tbody> 
+    </table>
+
+    # for tweets in result['search_result']: # if also getting text
+    #     tweets['text'] = tweets['text'].decode('utf-8')
+    # result_str = json.dumps(result)
+
+
+def find_the_tweeters(venue_name= None):
+    print 'finding the tweeters...'
+    print 'venue name: ' + venue_name
+    recentTweeters = FindUsers.search(last_tweet_venue_name = venue_name)
+    return recentTweeters
+
+
+
+# Store city, venue, question, and topic values given by the user
+@app.route('/answerers', methods=['POST'])
+def answerers():
+    error = None
+    nq.city = str(request.form['city'])
+    nq.venue = str(request.form['venue'])
+    nq.question = str(request.form['question'])
+    nq.topic = str(request.form['topic'])
+    nq.q_id =  getNextRowID("question") # incremental question_id in db
+    return redirect(url_for('show_answerers'))
+#    return render_template(url_for('show_answerers')) # does not work
+#    return render_template(url_for('show_answerers.html')) # does not work
+#    return redirect(url_for('show_answerers'))
+
+
+
+@app.route('/show_answerers')
+def show_answerers():
+    # Get X number of people who tweeted at the area / venue within the past X minutes
+    def getUsersToAsk(city = "tweet_pgh", venue = "Pittsburgh",
+                                                     how_many = 2, type = "at"):
+        return ["jinnyhyunjikim"] # testing
+
+        city = "tweet_pgh" # or 'tweet_ny', 'tweet_sf', 'tweet_boston'
+        search_limit = how_many
+        venue = venue
+        
+        # query = """SELECT DISTINCT user_screen_name FROM %s 
+        #             WHERE created_at >= (now() - interval '5 minutes') 
+        #             AND place-> 'full_name' = '%s' limit %d""" % (city, _venue_, _search_limit_)
+        query = """SELECT DISTINCT user_screen_name FROM %s 
+                    WHERE created_at >= (now() - interval '5 minutes') 
+                    limit %d;""" % ( city, search_limit )
+        conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
+        cur = conn.cursor()
+        cur.execute(query)
+        result = cur.fetchall()
+        conn.commit()
+        cur.close()
+        conn.close()
+        return result
+
+
+
+
+
+
+    def getUsersToAsk_method2(city = 'tweet_pgh', venue = 'Schenley Plaza',
+                                                how_many = 5, type = 'park', nearby ="near"):
+    # takes in a venue name and type, e.g. "Schenley Park", "park" or 
+    # "Forbes+Craig","cross-section"
+
+    # nearby = "near" - within .5 mi or "at" - within the bounding box 
+    # returns a list of how_many users who tweeted NEAR that venue within
+    # last X minutes
+        # Get the coordinates of the venue
+        return ['jinnyhyunjikim']
+        def getVenueID(venue_name):
+
+            return
+        def getCoordinatesOfVenue(venue_name):
+
+            CLIENT_ID ='0015X0KQ1MLXKW0RTDOCOKUMACBCKE30ZY2IFYPCQDYTZ3EC'
+            CLIENT_SECRET = 'UKJRW30YZAXC5DUO5KOZFPM4XWD3O3YSK0ANCZKB3TYCMCA5'
+
+            url = 'https://api.foursquare.com/v2/venues/search?match=true&limit=1'
+            city = 'near=%s' % ( 'pittsburgh,pa' )
+            venue_name = 'query=%s' % ( venue )             # print venue_name
+            client_id = 'client_id=' + CLIENT_ID
+            client_secret = 'client_secret='+ CLIENT_SECRET
+            url_complete = url + '&' + city + '&' + venue_name + '&' + client_id + '&' + client_secret+'&v=20150707'
+            # client_secret = '&client_secret='+ CLIENT_SECRET&v=YYYYMMDD
+            # oauth_token = '%oauth_token=' + 'SIVKZ0OBXJOO5DO3IJUZ2YDHGEBO4RCY3O3DVJTUE0IN1STQ&v=20150707' 
+
+            # url = 'https://api.foursquare.com/v2/venues/search?near=New+Delhi&intent=browse&radius=10000&limit=10&query=pizza+hut' + client_id + '&' + client_secret + '&v=20150707'
+            
+            response = requests.get(url_complete)
+            response = response.json()
+
+            print 'queried!'
+
+            # check the query is valid
+            valid = response['meta']['code']
+            if valid == 200:
+                first_venue = response['response']['venues'][0]
+                first_venue_id = first_venue['id']
+                first_venue_location = first_venue['location']
+                keys = first_venue_location.keys()
+
+                latitude = first_venue_location['lat']
+
+                longitude = first_venue_location['lng']
+                # print type(latitude)
+
+                return (latitude, longitude)
+            else: 
+                print 'No location found. Please check the venue name'
+                return -1
+
+        # Get users whose location within X minutes was within Y miles 
+        # of the venue's coordinates
+        coordinates_venue = getCoordinatesOfVenue(venue)
+        if coordinates_venue == -1:
+            return
+        else:
+            users_near = getNearUsers(coordinates_venue)
+
+        def getUsersNearby(coordinate_points):
+        # Takes in a tuple of latitude and longitude points and 
+        # Returns a list of users from question_user db who has tweeted 
+        # within X mi of the given points in the last 5 minutes
+
+            # Get users who tweeted within the last 5 minutes
+            search_limit = 5
+            query = """SELECT user_id FROM question_user
+                        WHERE last_tweet_timestamp >= (now() - interval '5 minutes') 
+                        limit %d;""" % ( search_limit )
+            conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
+            cur = conn.cursor()
+            cur.execute(query)
+            recent_tweeters = cur.fetchall()  # -> get list of userids
+            conn.commit()
+            cur.close()
+            conn.close()
+            
+
+            # Filter users who were within X mi of the given points
+            users_nearby = []
+            proximity = 0.05 # miles
+            # for recent_tweeter in recent_tweeters:
+                # get last coordinates of the tweeter 
+                # coordinates_tweeter = getMostRecentLocation
+
+                # calculate distance
+                # distance = getDistance(coordinates_venue, coordinates_tweeter)
+                # if distance < proximity:
+                    # users_nearby.append(recent_tweeter)
+            return users_nearby
+
+
+    # nq.usernames = getUsersToAsk()
+    nq.usernames = getUsersToAsk_method2()
+    usernames_to_display = []
+    one_username = dict()
+    for username in nq.usernames:
+            one_username['username'] = username
+            usernames_to_display.append(one_username)
+
+    count = len(usernames_to_display)
+    return render_template('show_answerers.html', venue=nq.venue, count=count, 
+                usernames=usernames_to_display) 
+
+
+# def get_distance_in_miles(coordinate_a, coordinate_b):
+#     # also available in km, m, mi, ft, nm, nmi
+#     return vincenty(coordinate_a, coordinate_b).miles
+
+# def get_distance_in_feet(coordinate_a, coordinate_b):
+#     # also available in km, m, mi, ft, nm, nmi
+#     return vincenty(coordinate_a, coordinate_b).feet
+
+
+def add_home(tweet):
+    # get username
+    # get most common neighborhood
+    # add to home key
+    username = tweet['screen_name']
+    query = "SELECT most_common_neighborhood FROM user_pgh WHERE screen_name = '%s' ;" % (username)
+    conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
+    cur = conn.cursor()
+    cur.execute(query)
+    result = cur.fetchall()
+    conn.commit()
+    cur.close()
+    conn.close()
+    if len(result) == 0: tweet['home'] = 'Not available.'
+    else: tweet['home'] = result[0][0]
+    return tweet
+
+
+    # def filter_by_home_faster(tweets, neighborhood = None):
+#     if neighborhood == None: return tweets 
+
+#     query = "SELECT screen_name FROM user_pgh WHERE most_common_neighborhood = '%s' ;" % (neighborhood)
+#     conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
+#     cur = conn.cursor()
+#     cur.execute(query)
+#     result = cur.fetchall()
+#     conn.commit()
+#     cur.close()
+#     conn.close()
+
+#     result_flattened  = [item for sublist in result for item in sublist]
+
+#     for tweet in tweets:
+#         user = tweet['screen_name']
+#         if user not in result_flattened: tweets.remove(tweet)
+#         tweet['home'] = 'not added'
+
+#     return tweets
+
+
+
+
+# print filter_by_home([], 'Shadyside')
+# print get_distance_in_miles((40.444187,-79.943345),(40.444187,-79.943345))
+# print get_distance_in_miles((40.444187,-79.943345),(40.441126,-79.959336))
+# print get_distance_in_miles((40.444187,-79.943345),(40.450887,-79.943024))
+# print get_distance_in_miles((40.444187,-79.943345),(40.441238,-79.99473))
+# print get_distance_in_miles((40.444187,-79.943345),(33.837399,-118.190292))
+
+
+
+# FindUsers.search(venue_name ="Phipps Conservatory")
+# SearchUsers.search(venue_name ="Phipps Conservatory")
+# SearchUsers.search(venue_id ="40a55d80f964a52020f31ee3")
+# SearchUsers.search(streets =("forbes ave", "craig st"))
+
+# print SearchUsers.search(venue_name ="Carnegie Mellon University")
+# print SearchUsers.search(venue_name ="Heinz Hall")
+# print SearchUsers.search(venue_name ="US Steel Tower")
+
+# print SearchUsers.search(streets =("7th st", "liberty ave"))
+
+# print SearchUsers.search(venue_name ="Panera")
+# print SearchUsers.search(venue_name ="Panear Bread")
+
+
+
+
+    
+def updateDatabase(tablename, *data):
+    print 'updating db for ' + tablename
+    columns_question = '(question_id, subject, location, question, start_time, end_time, send_times)'
+    # columns_question = '(question_id, subject, location, question, start_time, end_time)'
+    # columns_question = '(question_id, subject, location, question)'
+    columns_response = '(response_id, response_raw, response_parsed, in_reply_to, user_id, created_at)'
+    columns_question_tweet = '(tweet_id, question_id, user_id)'
+    columns_question_user = '(user_id)'
+
+    conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
+    cur = conn.cursor()
+    psycopg2.extras.register_hstore(conn)
+
+    data = list(data)
+    data = tuple(data) 
+    values = str(data)
+
+    print 'updating db'
+    if tablename == 'question_response':
+        columns = str(columns_response)
+    elif tablename == 'question':
+        columns = str(columns_question) 
+        send_times = data[-1]
+        values = str(data[:-1])
+        values = values[:-1] + ', %s)'
+    elif tablename == 'question_user':
+        columns = str(columns_question_user)
+    elif tablename == 'question_tweet':
+        columns = str(columns_question_tweet)
+    else:
+        print "Error: No such table to update!"
+
+    statement = "INSERT INTO " + tablename + " " + columns + " VALUES " + values + ";"
+    statement = "INSERT INTO " + tablename + " " + columns + " VALUES " + values + ";"
+    print statement
+    # cur.execute(statement)
+    # print new_question.send_times
+    if tablename == 'question':
+        print 'printing send_times'
+        print send_times
+        cur.execute(statement, (send_times,))
+        # cur.execute(statement, (str(new_question.send_times),))
+        # cur.execute(statement)
+    else:
+        cur.execute(statement)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    class NEW_QUESTION: 
+    city = "Pittsburgh"
+    venue = "Schenley Plaza"
+    usernames = ["jinnyhyunjikim"]
+    question = "How many college students do you see at Schenley Plaza right now?"
+    topic = "college student count"
+    q_id = 0 
+
+
+
+
+        # Insert data to psql tweet db
+def updateDatabase(tablename, *data):
+    columns_question = '(question_id, subject, location, question, time_opened, time_closed, stime_closeds)'
+    # columns_question = '(question_id, subject, location, question, time_opened, time_closed)'
+    # columns_question = '(question_id, subject, location, question)'
+    columns_response = '(response_id, response_raw, response_parsed, in_reply_to, user_id, created_at)'
+    columns_question_tweet = '(tweet_id, question_id, user_id)'
+    columns_question_user = '(user_id)'
+
+    conn = psycopg2.connect(database="tweet", user="jinnyhyunjikim")
+    cur = conn.cursor()
+
+    data = list(data)
+    data = tuple(data) 
+    values = str(data)
+
+    print 'updating db'
+    if tablename == 'question_response':
+        columns = str(columns_response)
+    elif tablename == 'question':
+        columns = str(columns_question) 
+        stime_closeds = data[-1]
+        values = str(data[:-1])
+        values = values[:-1] + ', %s)'
+    elif tablename == 'question_user':
+        columns = str(columns_question_user)
+    elif tablename == 'question_tweet':
+        columns = str(columns_question_tweet)
+    else:
+        print "Error: No such table to update!"
+
+    statement = "INSERT INTO " + tablename + " " + columns + " VALUES " + values + ";"
+    statement = "INSERT INTO " + tablename + " " + columns + " VALUES " + values + ";"
+    print statement
+    # cur.execute(statement)
+    # print new_question.stime_closeds
+    if tablename == 'question':
+        print 'printing stime_closeds'
+        print stime_closeds
+        cur.execute(statement, (stime_closeds,))
+        # cur.execute(statement, (str(new_question.stime_closeds),))
+        # cur.execute(statement)
+    else:
+        cur.execute(statement)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+
+def getRelativeTime(timestamp):
+# Takes in a timestamp with timezone and
+# returns humanized form of time difference btwn now and then
+    timestamp = timestamp.replace(tzinfo=None) # strip timezone 
+    now =  datetime.datetime.now()
+    relativeTime = humanize.naturaltime( now - timestamp )
+    return relativeTime
+def get_criteria_str(list_of_criteria):
+# 
+    return 'You searched for tweeters who tweeted within last x minutes near x who is most likely a resident of'
+# def criteria_to_string(list):/
+    # ['home', 'venue-id'] -> home, neighbor
+
+
+
+
+# @app.route('/parse')
+# def parse():
+#     return render_template('parse.html')
+
+
+# @app.route('/question_sent')
+# def question_sent():
+#     print 'entires '
+#     entries = [
+#         {'username': 'one'},
+#         {'username': 'two'}
+#     ]
+#     question = nq.question
+#     users = nq.usernames
+#     # time = current_time
+#     return render_template('question_sent.html', question=question, users=users)
+
+
+def convertUTCtoLocalTime(timestamp_string):
+    # remove decimal point in seconds
+    seconds_decimal_point = timestamp_string.index(".")
+    timestamp_string = timestamp_string[:seconds_decimal_point]
+
+    # METHOD 1: Hardcode zones:
+    from_zone = tz.gettz('UTC')
+    to_zone = tz.gettz('America/New_York') # for EST
+
+    # METHOD 2: Auto-detect zones:
+    # from_zone = tz.tzutc()
+    # to_zone = tz.tzlocal()
+
+    # utc = datetime.utcnow()
+    utc = datetime.datetime.strptime(timestamp_string, '%Y-%m-%d %H:%M:%S')
+
+    # Tell the datetime object that it's in UTC time zone since 
+    # datetime objects are 'naive' by default
+    utc = utc.replace(tzinfo=from_zone)
+
+    # Convert time zone
+    eastern = utc.astimezone(to_zone)
+    return eastern

@@ -1,83 +1,87 @@
-{% extends "search_users.html" %}
+{% extends "base.html" %}
 
 {% block h %}
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
   <script charset="utf-8">
-  jQuery(function($) {
-      // Asynchronously Load the map API 
-      var script = document.createElement('script');
-      script.src = "http://maps.googleapis.com/maps/api/js?sensor=false&callback=initialize";
-      document.body.appendChild(script);
-  });
 
-  function initialize() {
-      var result = {{ result_str|safe }};
-      var map;
-      var bounds = new google.maps.LatLngBounds();
-      var mapOptions = {
-          mapTypeId: 'roadmap'
-      };
-                      
-      // Display a map on the page
-      map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
-      map.setTilt(45);
+    jQuery(function($) {
+        // Asynchronously Load the map API 
+        var script = document.createElement('script');
+        script.src = "http://maps.googleapis.com/maps/api/js?sensor=false&callback=initialize";
+        document.body.appendChild(script);
+    });
+
+    function initialize() {
+        var result = {{ users|safe }};
+        var map;
+        var bounds = new google.maps.LatLngBounds();
+        var mapOptions = {
+            mapTypeId: 'roadmap'
+        };
+                        
+        // Display a map on the page
+        console.log(result.length)
+        if (result.length > 0) {
+          map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+          map.setTilt(45);
+              
+          // Multiple Markers
+
+          var markers = [
+              ['London Eye, London', 51.503454,-0.119562],
+              ['Palace of Westminster, London', 51.499633,-0.124755]
+          ];
+                
+          var markers = [
+            {% for user in users %}
+                // {'text': '{{ user["screen_name"]|safe }}', 'coordinates': {{ user['coordinates'] }}},
+                {'text': '{{ user["screen_name"]|safe }}', 'coordinates': {{ user['coordinates'] }}},
+            {% endfor %}
+          ];
+
+          // Info Window Content
+          var infoWindowContent = [
+              ['<div class="info_content">' +
+              '<h3>London Eye</h3>' +
+              '<p>The London Eye is a giant Ferris wheel situated on the banks of the River Thames. The entire structure is 135 metres (443 ft) tall and the wheel has a diameter of 120 metres (394 ft).</p>' +        '</div>'],
+              ['<div class="info_content">' +
+              '<h3>Palace of Westminster</h3>' +
+              '<p>The Palace of Westminster is the meeting place of the House of Commons and the House of Lords, the two houses of the Parliament of the United Kingdom. Commonly known as the Houses of Parliament after its tenants.</p>' +
+              '</div>']
+          ];
+              
+          // Display multiple markers on a map
+          var infoWindow = new google.maps.InfoWindow(), marker, i;
           
-      // Multiple Markers
+          // Loop through our array of markers & place each one on the map  
+          for( i = 0; i < markers.length; i++ ) {
+              var position = new google.maps.LatLng(markers[i]['coordinates'][0], markers[i]['coordinates'][1]);
+              bounds.extend(position);
+              marker = new google.maps.Marker({
+                  position: position,
+                  map: map,
+                  title: markers[i][0]
+              });
+              
+              // Allow each marker to have an info window    
+              google.maps.event.addListener(marker, 'click', (function(marker, i) {
+                  return function() {
+                      infoWindow.setContent(infoWindowContent[i][0]);
+                      infoWindow.open(map, marker);
+                  }
+              })(marker, i));
 
-      var markers = [
-          ['London Eye, London', 51.503454,-0.119562],
-          ['Palace of Westminster, London', 51.499633,-0.124755]
-      ];
-            
-      var markers = [
-        {% for tweeter in users %}
-            {'text': '{{ tweeter["screen_name"]|safe }}', 'coordinates': {{ tweeter['coordinates'] }}},
-        {% endfor %}
-      ];
+              // Automatically center the map fitting all markers on the screen
+              map.fitBounds(bounds);
+          }
 
-      // Info Window Content
-      var infoWindowContent = [
-          ['<div class="info_content">' +
-          '<h3>London Eye</h3>' +
-          '<p>The London Eye is a giant Ferris wheel situated on the banks of the River Thames. The entire structure is 135 metres (443 ft) tall and the wheel has a diameter of 120 metres (394 ft).</p>' +        '</div>'],
-          ['<div class="info_content">' +
-          '<h3>Palace of Westminster</h3>' +
-          '<p>The Palace of Westminster is the meeting place of the House of Commons and the House of Lords, the two houses of the Parliament of the United Kingdom. Commonly known as the Houses of Parliament after its tenants.</p>' +
-          '</div>']
-      ];
-          
-      // Display multiple markers on a map
-      var infoWindow = new google.maps.InfoWindow(), marker, i;
-      
-      // Loop through our array of markers & place each one on the map  
-      for( i = 0; i < markers.length; i++ ) {
-          var position = new google.maps.LatLng(markers[i]['coordinates'][0], markers[i]['coordinates'][1]);
-          bounds.extend(position);
-          marker = new google.maps.Marker({
-              position: position,
-              map: map,
-              title: markers[i][0]
+          // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
+          var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
+              this.setZoom(14);
+              google.maps.event.removeListener(boundsListener);
           });
-          
-          // Allow each marker to have an info window    
-          google.maps.event.addListener(marker, 'click', (function(marker, i) {
-              return function() {
-                  infoWindow.setContent(infoWindowContent[i][0]);
-                  infoWindow.open(map, marker);
-              }
-          })(marker, i));
-
-          // Automatically center the map fitting all markers on the screen
-          map.fitBounds(bounds);
-      }
-
-      // Override our map zoom level once our fitBounds function runs (Make sure it only runs once)
-      var boundsListener = google.maps.event.addListener((map), 'bounds_changed', function(event) {
-          this.setZoom(14);
-          google.maps.event.removeListener(boundsListener);
-      });
-      
-  }
+        }
+    }
   </script>
   <style>
     #map_wrapper {
@@ -91,121 +95,126 @@
 {% endblock %}
 
 {% block content %}
-    <h3>Recent Tweeters</h3>
-
-    <div class="input-field col s12">
-
-    <form action="{{ url_for('get_recent_tweeters') }}" method="POST">
-        <div>
-        <h4>By home (most tweeted location)</h4>
-        <input type="checkbox" name="check" value="home-neighborhood"><label>Neighborhood:</label>
-        <select class="browser-default" name="home-neighborhood">
-          <option value="Squirrel Hill">Squirrel Hill</option>
-          <option value="Shadyside">Shadyside</option>
-          <option value="Manchester">Manchester</option>
-          <option value="Central Oakland">Central Oakland</option>
-          <option value="Outside Pittsburgh">Outside Pittsburgh</option>
-          <option value="Crafton">Crafton Heights</option>
-          <option value="South Side Flats">South Side Flats</option>
-          <option value="Glen Hazel">Glen Hazel</option>
-          <option value="Arlington">Arlington</option>
-          <option value="Upper">Upper Lawrenceville</option>
-          <option value="Marshall-Shadeland">Marshall-Shadeland</option>
-          <option value="Central Lawrenceville">Central Lawrenceville</option>
-          <option value="Westwood">Westwood</option>
-          <option value="South Oakland">South Oakland</option>
-          <option value="Spring Garden">Spring Garden</option>
-          <option value="Highland Park">Highland Park</option>
-          <option value="Spring Hill-City View">Spring Hill-City View</option>
-        </select>
-      </div>
-
-      <div>
-        <h4>By most recent  location</h4>
-
-        <input type="radio" name="tweet-location" value="venue-name"><label>Venue Name</label>
-        <input type="text" name="venue-name" value="Pittsburgh International Airport">
-        <!--
-        <select class="browser-default" name="venue-name">
-          <option value="Carnegie Mellon Cafe">Carnegie Mellon Cafe</option>
-          <option value="US Steel Tower">US Steel Tower</option>
-          <option value="Point State Park">Point State Park</option>
-        </select>  
-        -->
-
+  <div class="banner center">
+    <div class="row">
+      <div class="col s12 center">
+        <h1>SEARCH TWEETERS</h1>
+        <a href="/new_question" id="download-button"> Pose New Question </a>
         &nbsp;
-        &nbsp;
-        <input type="radio" name="tweet-location"value="venue-id"><label>Venue ID</label>
-        <input type="text" name="venue-id" value="d3edkce5bg94j2">
-
-        &nbsp;
-        &nbsp;
-        <input type="radio" name="tweet-location" value="streets"><label>Streets</label>
-        <input type="text" name="venue-street-1" value="Craig St">
-        <input type="text" name="venue-street-2" value="Forbes Ave">
-
-
-        <br/>
-        <br/>
-        <input type="checkbox" name="check" value="tweet-since"><label>Tweeted within last 
-        <select class="browser-default" name="minutes">
-          <option value="1000">1000</option>
-          <option value="5">5</option>
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="30">30</option>
-          <option value="60">60</option>
-
-        </select>
-        minutes</label>
-      </div>
-    
-    <div class="input-field col s12" class="row center">
-          <br/>
-          <button class="btn waves-effect waves-light" type="submit" name="action">Search</button>
-    </div>
-
-    </form>
-    </div>
-
-
-    <br/>
-
-    <h3>Search Results</h3>
-
-    <p>Out of <b>{{ total_tweeters }} </b> tweeters in Pittsburgh who tweeted in the past x minutes,  <b>{{ return_count }}</b> matched your query.</p>
-    <p>We searched for <b>{{ total_tweeters }} </b> tweeters in Pittsburgh who tweeted in the past x minutes,  <b>{{ return_count }}</b> matched your query.</p>
-    <p>The query took <b>{{ query_duration }}</b> seconds.</p>
-    <p> <b>{{ criteria }}</b></p> 
-    <br/>
- 
-    <table>
-        <thead>
-            <tr>
-                <th data-field="id">Screen name</th>
-                <th data-field="name">Last tweet</th>
-                <!-- <th data-field="price">Coordinates</th> -->
-                <th data-field="price">Home</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for tweeter in users %}
-            <tr>
-                <td><b>{{ tweeter.screen_name }}</b></td>
-                <td>{{ tweeter.text }}</td>
-                <!-- <td>{{ tweeter.coordinates }}</td> -->
-                <td>{{ tweeter.home }}</td>
-            </tr>
-            {% endfor %} 
-        </tbody> 
-    </table>
-    <div id="map_wrapper">
-      <div id="map_canvas" class="mapping">
-        <!-- <button onclick=iinitialize()>What is the time?</button>
-        <p id="demo"></p>
+        <a href="/view_questions" id="download-button">View Open Questions</a>
       </div>
     </div>
+  </div>
+
+  <div class="container">
+
+      <!-- <div class="row center"> -->
+      <form action="{{ url_for('find_tweeters') }}" method="POST">
+        <!-- <div> -->
+        <div class="section">
+
+          <h1>1. Choose Location</h1>
+          <div class="row">
+            <div class="input-field col s12">
+              <input type="radio" name="location" value="venue-name" id="name"><label for="name">Venue Name</label>      
+              &nbsp;
+              <input type="radio" name="location" value="venue-id" id="id"><label for="id">Venue ID</label>        
+              &nbsp;
+              <input type="radio" name="location" value="streets" id="streets"><label for="streets">Streets</label>
+          </div>
+          </div>
+          <div class="row">
+            <div class="input-field col s4">
+              <input type="text" name="venue-name" value="Carnegie Mellon University">
+            </div>
+            <div class="input-field col s4">
+              <!-- <input type="radio" name="location"value="venue-id"><label>Venue ID</label> -->
+              <input type="text" name="venue-id" value="d3edkce5bg94j2">
+            </div>
+            <div class="input-field col s2">
+              <input type="text" name="venue-street-1" value="Craig St">
+            </div>
+            <div class="input-field col s2">
+              <input type="text" name="venue-street-2" value="Forbes Ave">
+            </div>
+          </div>
+        </div>
+          <!-- &nbsp; -->
+          <!-- &nbsp; -->
+          <!-- <input type="radio" name="location" value="streets"><label>Streets</label> -->
+          <!-- <input type="text" name="venue-street-1" value="Craig St"> -->
+          <!-- <input type="text" name="venue-street-2" value="Forbes Ave"> -->
+        <div class="section">
+          <div class="row">
+            <div class="input-field col s2 center"></div>
+            <div class="input-field col s8 center">
+              <h4>Tweeters within last
+                <select class="browser-default" name="minutes">
+                  <option value="5">5</option>
+                  <option value="10">10</option>
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                  <option value="60">60</option>
+                  <option value="1000">1000</option>
+                </select>
+                minutes</h4>
+            </div>
+            <div class="input-field col s2 center"></div>
+          </div>
+        </div>
+        <div class="section">
+          <div class="row">
+            <div class="input-field col s2 center"></div>
+            <div class="input-field col s8 center">
+              <h4>Residence Area</h4>
+              <!-- <input type="checkbox" name="check" value="home-neighborhood"> -->
+              <!-- <label>Neighborhood:</label> -->
+                <select class="browser-default" name="home-neighborhood">
+                  <option value="Any">Any</option>
+                  <option value="Squirrel Hill">Squirrel Hill</option>
+                  <option value="Shadyside">Shadyside</option>
+                  <option value="Manchester">Manchester</option>
+                  <option value="Central Oakland">Central Oakland</option>
+                  <option value="Outside Pittsburgh">Outside Pittsburgh</option>
+                  <option value="Crafton">Crafton Heights</option>
+                  <option value="South Side Flats">South Side Flats</option>
+                  <option value="Glen Hazel">Glen Hazel</option>
+                  <option value="Arlington">Arlington</option>
+                  <option value="Upper">Upper Lawrenceville</option>
+                  <option value="Marshall-Shadeland">Marshall-Shadeland</option>
+                  <option value="Central Lawrenceville">Central Lawrenceville</option>
+                  <option value="Westwood">Westwood</option>
+                  <option value="South Oakland">South Oakland</option>
+                  <option value="Spring Garden">Spring Garden</option>
+                  <option value="Highland Park">Highland Park</option>
+                  <option value="Spring Hill-City View">Spring Hill-City View</option>
+                </select>
+            </div>
+            <div class="input-field col s2 center"></div>
+          </div>
+        </div>
+        <div class="input-field col s12 row center">
+              <button class="btn waves-effect waves-light" type="submit" name="action">Search</button>
+        </div>
+      </form>
+
+      <div class="row center">
+        <h1>Search Results</h1>
+        <!-- <h3>{{ total_tweeters }} found!</h3> -->
+        <!-- <p>The query took <b>{{ query_duration }}</b> seconds.</p> -->
+
+        {% for tweeter in users %} 
+          <div class="col s1 center">
+            <p> {{ tweeter.screen_name }}</p>
+          </div>
+        {% endfor %} 
+      </div>
+
+      <div id="search_results">
+        <div id="search_result_header"></div>
+        <div id="map_wrapper"><div id="map_canvas" class="mapping"></div></div>
+      </div> 
+  </div>
 
 {% endblock %}
-
 

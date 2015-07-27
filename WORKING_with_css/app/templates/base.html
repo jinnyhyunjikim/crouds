@@ -2,35 +2,97 @@
 <html>
   <head>
     {% if title %}
-    <title>{{ title }} - microblog</title>
+      <title>{{ title }} - microblog</title>
     {% else %}
-    <title>CROUDS</title>
+      <title>CROUDS</title>
     {% endif %}
 
+    <link href="{{ url_for('.static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="{{ url_for('.static', filename='css/materialize.min.css') }}" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script src="{{ url_for('.static', filename='js/materialize.min.js') }}"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!--
     <style>
-    h1,h2,h3,h4,h5,h6,p,a{
-     /* font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;    */ 
-
-   }
-    body, table{
-      background-color: lightgrey;
-      background-color: whitesmoke;
-      font-family: Helvetica, Arial, sans-serif;
-      font-weight: 100;    
-      font-size: .7em;
-      text-decoration: none;
-    }
-    table{
-      margin:auto;
-    }
+      .container{
+        width: 70%;
+        font-family: Helvetica, Arial, sans-serif;
+        font-family: Roboto;
+        font-weight: 200;
+        /*font-weight: 100; */
+        /*width: 80%;*/
+      }
+      body {
+        background-color: whitesmoke;
+      }
+      nav {
+        background-color: lightgrey;
+        background-color: whitesmoke;
+        color: orange;
+      }
+      .whitesmoke {
+        background-color: whitesmoke;
+      }
+      .section {
+        background-color: lightblue;
+        margin: 25px 0px;
+        font-family: ubuntu;
+        font-family: Roboto;
+        padding: 30px;
+      }
+      .banner {
+        padding: 40px;
+        background-color: lightyellow;
+        font-weight: 100; 
+      }
+      .banner h1 {
+        color: white;
+        font-family: ubuntu;
+        font-weight: 100; 
+      }
+      .section h2 {
+        font-weight: 200; 
+        margin: 0px;
+      }
+      .section h6 {
+        color: grey;
+        font-weight: 100; 
+      }
     </style>
-    <!-- <link href="{{ url_for('.static', filename='css/style.css') }}" rel="stylesheet"> -->
-    <!-- <link href="{{ url_for('.static', filename='css/materialize.min.css') }}" rel="stylesheet"> -->
+    -->
+
     {% block h %}{% endblock %}
   </head>
   <body>
+    <nav class = "whitesmoke" role="navigation">
+      <div class="nav-wrapper container">
+        <a id="logo-container" href="#" class="brand-logo">Logo</a>
+        <ul class="right hide-on-med-and-down">
+          <li><a href="/new_question">Questions</a></li>
+          <li><a href="/responses_parsed">Responses</a></li>
+          <li><a href="/recent_tweeters">Tweeters</a></li>
+        </ul>
+
+        <ul id="nav-mobile" class="side-nav">
+          <li><a href="/new_question">Questions</a></li>
+          <li><a href="/responses">Responses</a></li>
+          <li><a href="/recent_tweeters">Tweeters</a></li>
+        </ul>
+        <a href="#" data-activates="nav-mobile" class="button-collapse"><i class="material-icons">menu</i></a>
+      </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    <div class="footer">
+      <p style="color: grey;font-size: .7em;font-weight:100;padding-top: 30px; margin-bottom: 0px; text-align:center">© Carnegie Mellon University CHIMPS Lab</p>
+    </div>
+  </body>
+</html>
+
+
     <!-- <div>CROUDS: <a href="/index">Home</a></div> -->
-    <div class="row center">
+    <div class="row_center">
       <!-- <p style="margin:2px">Allegheny County Police Department</p> -->
       <p style="margin:2px">City of Pittsburgh</p>
       <h5 style="margin:1px"><a href="/index" style="color:black">CROUDS</a></h5>
@@ -39,11 +101,3 @@
       <!-- <li><a href="/responses">VIEW RESPONSES</a> -->
       <!-- <hr> -->
     </div>
-    <div class="container">
-    {% block content %}{% endblock %}
-    </div>
-    <div class="footer">
-      <p style="color: grey;font-size: .7em;font-weight:100;padding-top: 30px; margin-bottom: 0px; text-align:center">© Carnegie Mellon University CHIMPS Lab</p>
-    </div>
-  </body>
-</html>

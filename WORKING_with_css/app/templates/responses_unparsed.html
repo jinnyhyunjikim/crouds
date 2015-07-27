@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="banner">
+        <div class="row center">
+        <h2>RESPONSES</h2>
+            <a href="/responses_parsed" id="download-button">Parsed</a>
+            &nbsp;
+            <a href="/responses_unparsed" id="download-button">Unparsed</a>
+        </div>
+    </div>
+<div class="container">
+    <div class="section">
+    <h3>Today</h3>
+      <table class="centered hoverable">
+        <thead>
+          <tr>
+                <th data-field="id">ID</th>
+                <th data-field="price">Location</th>
+                <th data-field="price">Subject</th>
+                <th data-field="price">Response</th>
+                <th data-field="name">Username</th>
+                <th data-field="price">Day</th>
+                <th data-field="price">Time</th>
+          </tr>
+        </thead>
+
+        <tbody>
+            {% for response in responses %}
+            <tr>
+                <td>{{ response.response_id }}</td>
+                <td>{{ response.location }}</td>
+                <td>{{ response.subject }}</td>
+                <td>{{ response.response_parsed }}</td>
+                <td>{{ response.username }}</td>
+                <td>{{ response.time }}</td>
+                <td>{{ response.day }}</td>
+                <td>{{ response.date }}</td>
+
+            </tr>
+            {% endfor %} 
+        </tbody>
+      </table>
+  </div>
+  <div class="section">
+    <h3>Yesterday</h3>
+      <table>
+        <thead>
+          <tr>
+                <th data-field="id">ID</th>
+                <th data-field="price">Location</th>
+                <th data-field="price">Subject</th>
+                <th data-field="price">Response</th>
+                <th data-field="name">Username</th>
+                <th data-field="price">Time</th>
+                <th data-field="price">Day</th>
+          </tr>
+        </thead>
+
+        <tbody>
+            {% for response in responses %}
+            <tr>
+                <td>{{ response.response_id }}</td>
+                <td>{{ response.location }}</td>
+                <td>{{ response.subject }}</td>
+                <td>{{ response.response_parsed }}</td>
+                <td>{{ response.username }}</td>
+
+            </tr>
+            {% endfor %} 
+        </tbody>
+      </table>
+  </div>
+  <div class="section">
+    <h3>Earlier This Week</h3>
+      <table>
+        <thead>
+          <tr>
+                <th data-field="id">ID</th>
+                <th data-field="price">Location</th>
+                <th data-field="price">Subject</th>
+                <th data-field="price">Response</th>
+                <th data-field="name">Username</th>
+                <th data-field="price">Time</th>
+                <th data-field="price">Day</th>
+          </tr>
+        </thead>
+
+        <tbody>
+            {% for response in responses %}
+            <tr>
+                <td>{{ response.response_id }}</td>
+                <td>{{ response.location }}</td>
+                <td>{{ response.subject }}</td>
+                <td>{{ response.response_parsed }}</td>
+                <td>{{ response.username }}</td>
+
+            </tr>
+            {% endfor %} 
+        </tbody>
+      </table>
+    </div>
+    <div class="section">
+      <h3>Earlier This Month</h3>
+        <table>
+          <thead>
+            <tr>
+                  <th data-field="id">ID</th>
+                  <th data-field="price">Location</th>
+                  <th data-field="price">Subject</th>
+                  <th data-field="price">Response</th>
+                  <th data-field="name">Username</th>
+                  <th data-field="price">Time</th>
+                  <th data-field="price">Day</th>
+            </tr>
+          </thead>
+
+          <tbody>
+              {% for response in responses %}
+              <tr>
+                  <td>{{ response.response_id }}</td>
+                  <td>{{ response.location }}</td>
+                  <td>{{ response.subject }}</td>
+                  <td>{{ response.response_parsed }}</td>
+                  <td>{{ response.username }}</td>
+
+              </tr>
+              {% endfor %} 
+          </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--
+
+
+    <h5>Open Questions</h5>
+    {% for question in questions %}
+      <div id="question" style="background-color:lightblue">
+      <ul class="collection with-header">
+          <li class="collection-header">
+            <h5>{{ question.question_text }} </h5>
+            <p>{{ question.time_since }}<p>
+            <pre>Venue: {{ question.venue }}      City: {{ question.city }}      Created at: {{ question.created_at }} (UTC)       Question ID: {{ question.id }} </pre>
+          </li>
+
+          {% for response in question.responses %}
+              <li class="collection-item"><b>{{ response.user_id }}</b>: {{ response.response_raw }} 
+              <p class="tweet_description">Sent at {{ response.created_at }}</p>
+              </li>
+
+          {% endfor %}
+    {% endfor %}
+
+    <h2>Closed Questions</h2>
+    {% for question in closed_questions %}
+      <div id="question" style="background-color:lightblue">
+      <ul class="collection with-header">
+          <li class="collection-header">
+            <h5>{{ question.question_text }} </h5>
+            <p>{{ question.time_since }}<p>
+            <pre>Venue: {{ question.venue }}      City: {{ question.city }}      Created at: {{ question.created_at }} (UTC)       Question ID: {{ question.id }} </pre>
+          </li>
+
+          {% for response in question.responses %}
+              <li class="collection-item"><b>{{ response.user_id }}</b>: {{ response.response_raw }} 
+              <p class="tweet_description">Sent at {{ response.created_at }}</p>
+              </li>
+
+          {% endfor %}
+    {% endfor %}
+
+-->

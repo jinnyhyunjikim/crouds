@@ -1,136 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-    <h3>Send Question</h3> 
-<!--
-    <div class="row center">
-    <div class="row">
-        <form class="col s9" action="{{ url_for('answerers') }}" method="POST">
-            <div class="row">
-                <div class="input-field col s6">
-                    <input placeholder="Placeholder" id="first_name" type="text" class="validate">
-                    <label for="first_name">First Name</label>
-                </div>
-                <div class="input-field col s6">
-                    <input id="last_name" type="text" class="validate">
-                    <label for="last_name">Last Name</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s12">
-                    <input disabled value="I am not editable" id="disabled" type="text" class="validate">
-                    <label for="disabled">Disabled</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s12">
-                    <input id="password" type="password" class="validate">
-                    <label for="password">Password</label>
-                </div>
-            </div>
-            <div class="row">
-                <div class="input-field col s12">
-                    <input id="email" type="email" class="validate">
-                    <label for="email">Email</label>
-                </div>
-            </div>
-            <button class="btn waves-effect waves-light" type="submit" name="action">Submit<i class="material-icons">send</i>
-            </button>
-        </form>
-    </div>
--->
-
-    <div>
-    	<form action="{{ url_for('answerers') }}" method="POST">
-			City:<br>
-			<input type="text" name="city" value="Pittsburgh">
-			<br>
-			Venue:<br>
-			<input type="text" name="venue" placeholder="e.g. Kennywood Park, Schenley Park, Forbes+Craig ">
-			<br>
-			Topic:<br>
-			<input type="text" name="topic" placeholder="e.g. Parks usage, bike traffic, pedestrian traffic">
-			<br>
-			Question:<br>
-			<!-- <input type="text" size = "35" name="question"> -->
-			<!-- <input type="textarea" rows="4" cols="50" name="question"> -->
-	        <div class="input-field col s12">
-	        	<textarea id="textarea1" class="materialize-textarea" name="question" placeholder="Can you count how many trucks you see passing by at Forbes+Craig in the next 2 minutes?"></textarea>
-            	<!-- <label for="textarea1">Question</label>			 -->
-	        </div>
-            <br/>
-			<br/>
-			<!-- <input type="submit" value="View users currently at the area"> -->
-		    <div class="row center">
-            <button class="btn waves-effect waves-light" type="submit" name="action">View users currently at the area<i class="material-icons">send</i> 
-            </button>
-
-            </div>
-  		</form>
-    </div>
-<!-- 
-
-    <div>
-    	<form action="question.html">
-			City:<br>
-			<input type="text" name="city">
-			<br>
-			Venue:<br>
-			<input type="text" name="venue">
-			<br>
-			Question:<br>
-			<input type="text" name="question">
-			<br>
-			<br>
-			<input type="submit" value="View how many Twitter users are at the venue.">
-		</form>
+    <div class="banner">
+        <div class="row center">
+        <h2>NEW QUESTION</h2>
+            <a href="/new_question" id="download-button"> Pose New Question </a>
+            &nbsp;
+            <a href="/view_questions" id="download-button">View Open Questions</a>
+        </div>
     </div>
 
-    <div>
-    	<form action="answerers">
-			NASWERSRS:<br>
-			<input type="text" name="city">
-			<br>
-			Venue:<br>
-			<input type="text" name="venue">
-			<br>
-			Question:<br>
-			<input type="text" name="question">
-			<br>
-			<br>
-			<input type="submit" value="View how many Twitter users are at the venue.">
-		</form>
-    </div>
-
-    <div>
-    	<form action="question", method="POST">
-			City:<br>
-			<input type="text" name="city">
-			<br>
-			Venue:<br>
-			<input type="text" name="venue">
-			<br>
-			Question:<br>
-			<input type="text" name="question">
-			<br>
-			<br>
-			<input type="submit" value="View how many Twitter users are at the venue.">
-		</form>
-    </div>
-    <div>
-    	<form action="question.html", method="POST">
-			City:<br>
-			<input type="text" name="city">
-			<br>
-			Venue:<br>
-			<input type="text" name="venue">
-			<br>
-			Question:<br>
-			<input type="text" name="question">
-			<br>
-			<br>
-			<input type="submit" value="View how many Twitter users are at the venue.">
-		</form>
-    </div> -->
-    </div>
+{% block content2 %}{% endblock %}
 
 {% endblock %}
+
+
